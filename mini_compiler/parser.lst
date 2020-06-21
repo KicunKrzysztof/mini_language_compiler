@@ -1,0 +1,226 @@
+
+// ==========================================================================
+//  GPPG error listing for yacc source file <parser.y - 6/20/2020 8:49:44 PM>
+// ==========================================================================
+//  Version:  1.5.2
+//  Machine:  DESKTOP-F5UB616
+//  DateTime: 6/20/2020 8:49:47 PM
+//  UserName: Krzys
+// ==========================================================================
+
+
+%namespace GardensPoint
+
+%union
+{
+	public string val;
+	public SyntaxTree s;
+}
+
+%token If Else While Read Write Return Int Double Bool False True Assign Or And BitwiseOr BitwiseAnd Equals NotEquals
+%token GreaterThan GreaterEqual LessThan LessEqual Plus Minus Mul Div Not BitwiseNot OpenPar ClosePar OpenCurly 
+%token CloseCurly Semicolon String
+
+%token <val> Ident RealNumber IntNumber
+
+%type <s> program
+
+%%
+// Error: There are 3 non-terminating NonTerminal Symbols
+   //  {program, $accept, Program}
+// Warning: Terminating Program fixes the following size-3 NonTerminal set
+   // {program, $accept, Program}
+// Error: NonTerminal symbol "Program" has no productions
+// -----------------------------------------------------------------------
+
+program
+	: Program compound_statement
+		{
+			Compiler.EmitCode("program");
+		}
+	;
+
+/*-------------------------------------------------------------------------------------------------*/
+
+primary_expression
+	: Ident
+		{
+			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.Ident, $1));
+		}
+	| False
+		{
+			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.False, $1));
+		}
+	| True
+		{
+			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.True, $1));
+		}
+	| RealNumber
+		{
+			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.RealNumber, $1));
+		}
+	| IntNumber
+		{
+			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.IntNumber, $1));
+		}
+	| OpenPar expression ClosePar
+		{
+			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.Exp, $2));
+		}
+	;
+
+unary_expression
+	: primary_expression
+		{Compiler.EmitCode("primary_expression");}
+	| unary_operator unary_expression
+		{}
+	;
+
+unary_operator
+	: Plus
+		{}
+	| Minus
+		{}
+	| BitwiseNot
+		{}
+	| Not
+		{}
+	| OpenPar Double ClosePar
+		{}
+	| OpenPar Int ClosePar
+		{}
+	;
+
+bitwise_expression
+	: unary_expression
+		{Compiler.EmitCode("unary_expression");}
+	| bitwise_expression BitwiseOr unary_expression
+		{}
+	| bitwise_expression BitwiseAnd unary_expression
+		{}
+	;
+
+multiplicative_expression
+	: bitwise_expression
+		{Compiler.EmitCode("bitwise_expression");}
+	| multiplicative_expression Mul bitwise_expression
+		{}
+	| multiplicative_expression Div bitwise_expression
+		{}
+	;
+
+additive_expression
+	: multiplicative_expression
+		{Compiler.EmitCode("multiplicative_expression");}
+	| additive_expression Plus multiplicative_expression
+		{}
+	| additive_expression Minus multiplicative_expression
+		{}
+	;
+
+relational_expression
+	: additive_expression
+		{Compiler.EmitCode("additive_expression");}
+	| relational_expression LessThan additive_expression
+		{}
+	| relational_expression GreaterThan additive_expression
+		{}
+	| relational_expression LessEqual additive_expression
+		{}
+	| relational_expression GreaterEqual additive_expression
+		{}
+	| relational_expression Equals additive_expression
+		{}
+	| relational_expression NotEquals additive_expression
+		{}
+	;
+
+logical_expression
+	: relational_expression
+		{Compiler.EmitCode("relational_expression");}
+	| logical_expression And relational_expression
+		{}
+	| logical_expression Or relational_expression
+		{}
+	;
+
+expression
+	: logical_expression
+		{Compiler.EmitCode("logical_expression");}
+	| logical_expression Assign expression
+		{Compiler.EmitCode("expression");}
+	;
+
+/*-------------------------------------------------------------------------------------------------*/
+
+declaration
+	: Int Ident Semicolon
+		{}
+	| Double Ident Semicolon
+		{}
+	| Bool Ident Semicolon
+		{}
+	;
+
+/*-------------------------------------------------------------------------------------------------*/
+
+statement
+	: compound_statement
+		{}
+	| expression Semicolon
+		{}
+	| selection_statement
+		{}
+	| While OpenPar expression ClosePar statement
+		{}
+	| Read Ident Semicolon
+		{}
+	| write_statement
+		{}
+	| Return Semicolon
+		{}
+	;
+
+compound_statement
+	: OpenCurly CloseCurly
+		{}
+	| OpenCurly statement_list CloseCurly
+		{Compiler.EmitCode("compound_statement");}
+	| OpenCurly declaration_list CloseCurly
+		{}
+	| OpenCurly declaration_list statement_list CloseCurly
+		{}
+	;
+
+declaration_list
+	: declaration
+		{}
+	| declaration_list declaration
+		{}
+	;
+
+statement_list
+	: statement
+		{}
+	| statement_list statement
+		{}
+	;
+
+selection_statement
+	: If OpenPar expression ClosePar statement
+		{}
+	| If OpenPar expression ClosePar statement Else statement
+		{}
+	;
+
+write_statement
+	: Write Ident Semicolon
+		{}
+	| Write String Semicolon
+		{}
+	;
+
+%%
+
+public Parser(Scanner scanner) : base(scanner) { }// ==========================================================================
+

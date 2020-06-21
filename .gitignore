@@ -348,3 +348,7 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# gppg and gplex programs
+mini_compiler/Gplex.exe
+mini_compiler/Gppg.exe
