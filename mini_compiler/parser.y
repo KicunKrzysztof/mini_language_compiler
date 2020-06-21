@@ -15,12 +15,12 @@
 %type <node> program declaration 
 %type <node> primary_expression unary_expression unary_operator bitwise_expression multiplicative_expression
 %type <node> additive_expression relational_expression logical_expression expression
-%type <node> statement compound_statement declaration_list statement_list selection_statement write_statement
+%type <node> statement declaration_list statement_list selection_statement write_statement main_statement block_statement
 
 %%
 
 program
-	: Program compound_statement
+	: Program main_statement
 		{
 			Compiler.tree = new Program(@1.StartLine, $2);
 		}
@@ -67,11 +67,7 @@ unary_expression
 	;
 
 unary_operator
-	: Plus
-		{
-			$$ = new UnaryOp(@1.StartLine, UnaryOpType.Plus);
-		}
-	| Minus
+	: Minus
 		{
 			$$ = new UnaryOp(@1.StartLine, UnaryOpType.Minus);
 		}
@@ -215,9 +211,9 @@ declaration
 /*-------------------------------------------------------------------------------------------------*/
 
 statement
-	: compound_statement
+	: block_statement
 		{
-			$$ = new Stat(@1.StartLine, StatType.Cmp, $1);
+			$$ = new Stat(@1.StartLine, StatType.Block, $1);
 		}
 	| expression Semicolon
 		{
@@ -245,22 +241,33 @@ statement
 		}
 	;
 
-compound_statement
+block_statement
 	: OpenCurly CloseCurly
 		{
-			$$ = new CmpStat(@1.StartLine, CmpStatType.Empty);
+			$$ = new BlockStat(@1.StartLine);
 		}
 	| OpenCurly statement_list CloseCurly
 		{
-			$$ = new CmpStat(@1.StartLine, CmpStatType.Stat, $2);
+			$$ = new BlockStat(@1.StartLine, $2);
+		}
+	;
+
+main_statement
+	: OpenCurly CloseCurly
+		{
+			$$ = new MainStat(@1.StartLine, MainStatType.Empty);
+		}
+	| OpenCurly statement_list CloseCurly
+		{
+			$$ = new MainStat(@1.StartLine, MainStatType.Stat, $2);
 		}
 	| OpenCurly declaration_list CloseCurly
 		{
-			$$ = new CmpStat(@1.StartLine, CmpStatType.Decl, $2);
+			$$ = new MainStat(@1.StartLine, MainStatType.Decl, $2);
 		}
 	| OpenCurly declaration_list statement_list CloseCurly
 		{
-			$$ = new CmpStat(@1.StartLine, CmpStatType.DeclStat, $2, $3);
+			$$ = new MainStat(@1.StartLine, MainStatType.DeclStat, $2, $3);
 		}
 	;
 

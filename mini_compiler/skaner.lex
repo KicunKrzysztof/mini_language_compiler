@@ -9,7 +9,8 @@ Whitespaces		[ \t\r]+
 Newline			\n
 String			\"(.*)\"
 
-%%
+%%
+
 "program"			{ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Program; }
 "if"				{ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.If; }
 "else"				{ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Else; }

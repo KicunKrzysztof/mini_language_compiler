@@ -1,10 +1,10 @@
 
 // ==========================================================================
-//  GPPG error listing for yacc source file <parser.y - 6/20/2020 8:49:44 PM>
+//  GPPG error listing for yacc source file <parser.y - 6/21/2020 12:19:15 PM>
 // ==========================================================================
 //  Version:  1.5.2
 //  Machine:  DESKTOP-F5UB616
-//  DateTime: 6/20/2020 8:49:47 PM
+//  DateTime: 6/21/2020 12:19:35 PM
 //  UserName: Krzys
 // ==========================================================================
 
@@ -14,29 +14,33 @@
 %union
 {
 	public string val;
-	public SyntaxTree s;
+	public SyntaxTree node;
 }
 
-%token If Else While Read Write Return Int Double Bool False True Assign Or And BitwiseOr BitwiseAnd Equals NotEquals
+%token Program If Else While Read Write Return Int Double Bool False True Assign Or And BitwiseOr BitwiseAnd Equals NotEquals
 %token GreaterThan GreaterEqual LessThan LessEqual Plus Minus Mul Div Not BitwiseNot OpenPar ClosePar OpenCurly 
-%token CloseCurly Semicolon String
+%token CloseCurly Semicolon
 
-%token <val> Ident RealNumber IntNumber
+%token <val> Ident RealNumber IntNumber String
 
-%type <s> program
+%type <node> program declaration 
+%type <node> primary_expression unary_expression unary_operator bitwise_expression multiplicative_expression
+%type <node> additive_expression relational_expression logical_expression expression
+%type <node> statement compound_statement declaration_list statement_list selection_statement write_statement
 
 %%
-// Error: There are 3 non-terminating NonTerminal Symbols
-   //  {program, $accept, Program}
-// Warning: Terminating Program fixes the following size-3 NonTerminal set
-   // {program, $accept, Program}
-// Error: NonTerminal symbol "Program" has no productions
-// -----------------------------------------------------------------------
+// Error: There are 1 non-terminating NonTerminal Symbols
+   //  {compound_statement}
+// Warning: Terminating compound_statement fixes the following size-1 NonTerminal set
+   // {compound_statement}
+// Warning: NonTerminal symbol "compound_statement" is unreachable
+// Error: NonTerminal symbol "compound_statement" has no productions
+// ----------------------------------------------------------------------------------
 
 program
-	: Program compound_statement
+	: Program main_statement
 		{
-			Compiler.EmitCode("program");
+			Compiler.tree = new Program(@1.StartLine, $2);
 		}
 	;
 
@@ -45,179 +49,292 @@ program
 primary_expression
 	: Ident
 		{
-			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.Ident, $1));
+			$$ = new PrimaryExp(@1.StartLine, PrimaryExpType.Ident, $1);
 		}
 	| False
 		{
-			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.False, $1));
+			$$ = new PrimaryExp(@1.StartLine, PrimaryExpType.False, "false");
 		}
 	| True
 		{
-			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.True, $1));
+			$$ = new PrimaryExp(@1.StartLine, PrimaryExpType.True, "true");
 		}
 	| RealNumber
 		{
-			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.RealNumber, $1));
+			$$ = new PrimaryExp(@1.StartLine, PrimaryExpType.RealNumber, $1);
 		}
 	| IntNumber
 		{
-			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.IntNumber, $1));
+			$$ = new PrimaryExp(@1.StartLine, PrimaryExpType.IntNumber, $1);
 		}
 	| OpenPar expression ClosePar
 		{
-			Compiler.stack.Add(new PrimaryExp(@1.StartLine, PrimaryExpType.Exp, $2));
+			$$ = new PrimaryExp(@1.StartLine, PrimaryExpType.Exp, $2);
 		}
 	;
 
 unary_expression
 	: primary_expression
-		{Compiler.EmitCode("primary_expression");}
+		{
+			$$ = new UnaryExp(@1.StartLine, $1);
+		}
 	| unary_operator unary_expression
-		{}
+		{
+			$$ = new UnaryExp(@1.StartLine, $1, $2);
+		}
 	;
 
 unary_operator
 	: Plus
-		{}
+		{
+			$$ = new UnaryOp(@1.StartLine, UnaryOpType.Plus);
+		}
 	| Minus
-		{}
+		{
+			$$ = new UnaryOp(@1.StartLine, UnaryOpType.Minus);
+		}
 	| BitwiseNot
-		{}
+		{
+			$$ = new UnaryOp(@1.StartLine, UnaryOpType.BitwiseNot);
+		}
 	| Not
-		{}
+		{
+			$$ = new UnaryOp(@1.StartLine, UnaryOpType.Not);
+		}
 	| OpenPar Double ClosePar
-		{}
+		{
+			$$ = new UnaryOp(@1.StartLine, UnaryOpType.Cast2Double);
+		}
 	| OpenPar Int ClosePar
-		{}
+		{
+			$$ = new UnaryOp(@1.StartLine, UnaryOpType.Cast2Int);
+		}
 	;
 
 bitwise_expression
 	: unary_expression
-		{Compiler.EmitCode("unary_expression");}
+		{
+			$$ = new BitwiseExp(@1.StartLine, $1);
+		}
 	| bitwise_expression BitwiseOr unary_expression
-		{}
+		{
+			$$ = new BitwiseExp(@1.StartLine, $1, $3, BitwiseOpType.Or);
+		}
 	| bitwise_expression BitwiseAnd unary_expression
-		{}
+		{
+			$$ = new BitwiseExp(@1.StartLine, $1, $3, BitwiseOpType.And);
+		}
 	;
 
 multiplicative_expression
 	: bitwise_expression
-		{Compiler.EmitCode("bitwise_expression");}
+		{
+			$$ = new MulExp(@1.StartLine, $1);
+		}
 	| multiplicative_expression Mul bitwise_expression
-		{}
+		{
+			$$ = new MulExp(@1.StartLine, $1, $3, MulOpType.Mul);
+		}
 	| multiplicative_expression Div bitwise_expression
-		{}
+		{
+			$$ = new MulExp(@1.StartLine, $1, $3, MulOpType.Div);
+		}
 	;
 
 additive_expression
 	: multiplicative_expression
-		{Compiler.EmitCode("multiplicative_expression");}
+		{
+			$$ = new AddExp(@1.StartLine, $1);
+		}
 	| additive_expression Plus multiplicative_expression
-		{}
+		{
+			$$ = new AddExp(@1.StartLine, $1, $3, AddOpType.Add);
+		}
 	| additive_expression Minus multiplicative_expression
-		{}
+		{
+			$$ = new AddExp(@1.StartLine, $1, $3, AddOpType.Sub);
+		}
 	;
 
 relational_expression
 	: additive_expression
-		{Compiler.EmitCode("additive_expression");}
+		{
+			$$ = new RelExp(@1.StartLine, $1);
+		}
 	| relational_expression LessThan additive_expression
-		{}
+		{
+			$$ = new RelExp(@1.StartLine, $1, $3, RelOpType.LessThan);
+		}
 	| relational_expression GreaterThan additive_expression
-		{}
+		{
+			$$ = new RelExp(@1.StartLine, $1, $3, RelOpType.GreaterThan);
+		}
 	| relational_expression LessEqual additive_expression
-		{}
+		{
+			$$ = new RelExp(@1.StartLine, $1, $3, RelOpType.LessEqual);
+		}
 	| relational_expression GreaterEqual additive_expression
-		{}
+		{
+			$$ = new RelExp(@1.StartLine, $1, $3, RelOpType.GreaterEqual);
+		}
 	| relational_expression Equals additive_expression
-		{}
+		{
+			$$ = new RelExp(@1.StartLine, $1, $3, RelOpType.Equals);
+		}
 	| relational_expression NotEquals additive_expression
-		{}
+		{
+			$$ = new RelExp(@1.StartLine, $1, $3, RelOpType.NotEquals);
+		}
 	;
 
 logical_expression
 	: relational_expression
-		{Compiler.EmitCode("relational_expression");}
+		{
+			$$ = new LogExp(@1.StartLine, $1);
+		}
 	| logical_expression And relational_expression
-		{}
+		{
+			$$ = new LogExp(@1.StartLine, $1, $3, LogOpType.And);
+		}
 	| logical_expression Or relational_expression
-		{}
+		{
+			$$ = new LogExp(@1.StartLine, $1, $3, LogOpType.Or);
+		}
 	;
 
 expression
 	: logical_expression
-		{Compiler.EmitCode("logical_expression");}
+		{
+			$$ = new Exp(@1.StartLine, $1);
+		}
 	| logical_expression Assign expression
-		{Compiler.EmitCode("expression");}
+		{
+			$$ = new Exp(@1.StartLine, $1, $3);
+		}
 	;
 
 /*-------------------------------------------------------------------------------------------------*/
 
 declaration
 	: Int Ident Semicolon
-		{}
+		{
+			$$ = new Decl(@1.StartLine, VarType.Int, $2);
+		}
 	| Double Ident Semicolon
-		{}
+		{
+			$$ = new Decl(@1.StartLine, VarType.Double, $2);
+		}
 	| Bool Ident Semicolon
-		{}
+		{
+			$$ = new Decl(@1.StartLine, VarType.Bool, $2);
+		}
 	;
 
 /*-------------------------------------------------------------------------------------------------*/
 
 statement
-	: compound_statement
-		{}
+	: block_statement
+		{
+			$$ = new Stat(@1.StartLine, StatType.Block, $1);
+		}
 	| expression Semicolon
-		{}
+		{
+			$$ = new Stat(@1.StartLine, StatType.Exp, $1);
+		}
 	| selection_statement
-		{}
+		{
+			$$ = new Stat(@1.StartLine, StatType.Selection, $1);
+		}
 	| While OpenPar expression ClosePar statement
-		{}
+		{
+			$$ = new Stat(@1.StartLine, StatType.While, $3, $5);
+		}
 	| Read Ident Semicolon
-		{}
+		{
+			$$ = new Stat(@1.StartLine, StatType.Read, $2);
+		}
 	| write_statement
-		{}
+		{
+			$$ = new Stat(@1.StartLine, StatType.Write, $1);
+		}
 	| Return Semicolon
-		{}
+		{
+			$$ = new Stat(@1.StartLine, StatType.Return);
+		}
 	;
 
-compound_statement
+block_statement
 	: OpenCurly CloseCurly
-		{}
+		{
+			$$ = new BlockStat(@1.StartLine);
+		}
 	| OpenCurly statement_list CloseCurly
-		{Compiler.EmitCode("compound_statement");}
+		{
+			$$ = new BlockStat(@1.StartLine, $2);
+		}
+	;
+
+main_statement
+	: OpenCurly CloseCurly
+		{
+			$$ = new MainStat(@1.StartLine, MainStatType.Empty);
+		}
+	| OpenCurly statement_list CloseCurly
+		{
+			$$ = new MainStat(@1.StartLine, MainStatType.Stat, $2);
+		}
 	| OpenCurly declaration_list CloseCurly
-		{}
+		{
+			$$ = new MainStat(@1.StartLine, MainStatType.Decl, $2);
+		}
 	| OpenCurly declaration_list statement_list CloseCurly
-		{}
+		{
+			$$ = new MainStat(@1.StartLine, MainStatType.DeclStat, $2, $3);
+		}
 	;
 
 declaration_list
 	: declaration
-		{}
+		{
+			$$ = new DeclList(@1.StartLine, $1);
+		}
 	| declaration_list declaration
-		{}
+		{
+			$$ = new DeclList(@1.StartLine, $1, $2);
+		}
 	;
 
 statement_list
 	: statement
-		{}
+		{
+			$$ = new StatList(@1.StartLine, $1);
+		}
 	| statement_list statement
-		{}
+		{
+			$$ = new StatList(@1.StartLine, $1, $2);
+		}
 	;
 
 selection_statement
 	: If OpenPar expression ClosePar statement
-		{}
+		{
+			$$ = new SelectionStat(@1.StartLine, $3, $5);
+		}
 	| If OpenPar expression ClosePar statement Else statement
-		{}
+		{
+			$$ = new SelectionStat(@1.StartLine, $3, $5, $7);
+		}
 	;
 
 write_statement
 	: Write Ident Semicolon
-		{}
+		{
+			$$ = new WriteStat(@1.StartLine, WriteStatType.Ident, $2);
+		}
 	| Write String Semicolon
-		{}
+		{
+			$$ = new WriteStat(@1.StartLine, WriteStatType.String, $2);
+		}
 	;
 
 %%
