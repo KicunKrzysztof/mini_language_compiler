@@ -149,7 +149,7 @@ public class SemanticError
 #region Enums
 public enum VariableType
 {
-    Int, Double, Bool, NoVariable
+    Int, Double, Bool, NoVariable, SemError
 }
 public enum PrimaryExpType
 {
@@ -247,6 +247,15 @@ public abstract class SyntaxTree
         else
             return children[0].LValue();
     }
+    public bool PassSemError()
+    {
+        for (int i = 0; i < children.Count; i++)
+        {
+            if (semChildren[i] == VariableType.SemError)
+                return true;
+        }
+        return false;
+    }
 }
 public class Program : SyntaxTree
 {
@@ -282,13 +291,15 @@ public class PrimaryExp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         switch (_type)
         {
             case PrimaryExpType.Ident:
                 if (!Compiler.symbolArray.ContainsKey(_val))
                 {
                     Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: not declared variable"));
-                    return VariableType.NoVariable;
+                    return VariableType.SemError;
                 }
                 else
                 {
@@ -337,6 +348,8 @@ public class UnaryExp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         switch (_type)
         {
             case UnaryExpType.Empty:
@@ -352,7 +365,7 @@ public class UnaryExp : SyntaxTree
                         else
                         {
                             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: unary minus operand must has type int or double"));
-                            return VariableType.NoVariable;
+                            return VariableType.SemError;
                         }
                     case UnaryOpType.Not:
                         if (semChildren[1] == VariableType.Bool)
@@ -362,7 +375,7 @@ public class UnaryExp : SyntaxTree
                         else
                         {
                             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: logic not operand must has type bool"));
-                            return VariableType.NoVariable;
+                            return VariableType.SemError;
                         }
                     case UnaryOpType.BitwiseNot:
                         if (semChildren[1] == VariableType.Int)
@@ -372,7 +385,7 @@ public class UnaryExp : SyntaxTree
                         else
                         {
                             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: bitwise not operand must has type int"));
-                            return VariableType.NoVariable;
+                            return VariableType.SemError;
                         }
                     case UnaryOpType.Cast2Double:
                         return VariableType.Double;
@@ -419,6 +432,8 @@ public class BitwiseExp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (_type == BitwiseOpType.Empty)
         {
             return semChildren[0];
@@ -430,7 +445,7 @@ public class BitwiseExp : SyntaxTree
         else
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: bitwise and/or operands must have type int"));
-            return VariableType.NoVariable;
+            return VariableType.SemError;
         }
     }
 }
@@ -455,6 +470,8 @@ public class MulExp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (_type == MulOpType.Empty)
         {
             return semChildren[0];
@@ -474,7 +491,7 @@ public class MulExp : SyntaxTree
         else
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: multiplicative operands must have type int or double"));
-            return VariableType.NoVariable;
+            return VariableType.SemError;
         }
     }
 }
@@ -499,6 +516,8 @@ public class AddExp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (_type == AddOpType.Empty)
         {
             return semChildren[0];
@@ -518,7 +537,7 @@ public class AddExp : SyntaxTree
         else
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: additives operands must have type int or double"));
-            return VariableType.NoVariable;
+            return VariableType.SemError;
         }
     }
 }
@@ -543,6 +562,8 @@ public class RelExp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (_type == RelOpType.Empty)
             return semChildren[0];
         VariableType arg1Type = semChildren[0];
@@ -641,6 +662,8 @@ public class LogExp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (_type == LogOpType.Empty)
         {
             return semChildren[0];
@@ -652,7 +675,7 @@ public class LogExp : SyntaxTree
         else
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: logic and/or operands must have type bool"));
-            return VariableType.NoVariable;
+            return VariableType.SemError;
         }
     }
 }
@@ -677,6 +700,8 @@ public class Exp : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (_type == ExpOpType.Empty)
         {
             return semChildren[0];
@@ -692,7 +717,7 @@ public class Exp : SyntaxTree
                 else
                 {
                     Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type int"));
-                    return VariableType.NoVariable;
+                    return VariableType.SemError;
                 }
             }
             else if (semChildren[0] == VariableType.Int)
@@ -702,7 +727,7 @@ public class Exp : SyntaxTree
                 else
                 {
                     Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type int"));
-                    return VariableType.NoVariable;
+                    return VariableType.SemError;
                 }
             }
             else if (semChildren[0] == VariableType.Bool)
@@ -712,19 +737,19 @@ public class Exp : SyntaxTree
                 else
                 {
                     Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type bool"));
-                    return VariableType.NoVariable;
+                    return VariableType.SemError;
                 }
             }
             else
             {
                 Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: non defined semantic error"));
-                return VariableType.NoVariable;
+                return VariableType.SemError;
             }
         }
         else
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign left operand must be identifier"));
-            return VariableType.NoVariable;
+            return VariableType.SemError;
         }
     }
 }
@@ -747,7 +772,7 @@ public class Decl : SyntaxTree
         if (Compiler.symbolArray.ContainsKey(_val))
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: variable already declared"));
-            return VariableType.NoVariable;
+            return VariableType.SemError;
         }
         else
         {
@@ -796,13 +821,17 @@ public class Stat : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (_type == StatType.Read && !Compiler.symbolArray.ContainsKey(_ident))
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: identifier not declared"));
+            return VariableType.SemError;
         }
         else if (_type == StatType.While && semChildren[0] != VariableType.Bool)
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: while term must be of type bool"));
+            return VariableType.SemError;
         }
         return VariableType.NoVariable;
     }
@@ -908,9 +937,11 @@ public class SelectionStat : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
+        if (PassSemError())
+            return VariableType.SemError;
         if (semChildren[0] != VariableType.Bool)
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: if term must be of type bool"));
-        return VariableType.NoVariable;
+        return VariableType.SemError;
     }
 }
 public class WriteStat : SyntaxTree
@@ -941,7 +972,7 @@ public class WriteStat : SyntaxTree
         {
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: identifier not declared"));
         }
-        return VariableType.NoVariable;
+        return VariableType.SemError;
     }
 }
 #endregion
