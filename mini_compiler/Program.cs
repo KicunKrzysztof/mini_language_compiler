@@ -5,33 +5,25 @@ using GardensPoint;
 
 public class Compiler
 {
-
-    public static int errors = 0;
-
     public static List<string> source;
-
     public static SyntaxTree tree;
-
     public static Dictionary<string, Variable> symbolArray = new Dictionary<string, Variable>();
-
     public static List<SemanticError> SemanticErrors = new List<SemanticError>();
-
     private static StreamWriter sw;
 
-    // arg[0] określa plik źródłowy
-    // pozostałe argumenty są ignorowane
     public static int Main(string[] args)
     {
         string file;
         FileStream source;
         Console.WriteLine("\nMulti-Pass mini language compiler - Gardens Point");
-        if (args.Length >= 1)
-            file = args[0];
-        else
-        {
-            Console.Write("\nsource file:  ");
-            file = Console.ReadLine();
-        }
+        file = "input.txt";
+        //if (args.Length >= 1)
+        //    file = args[0];
+        //else
+        //{
+        //    Console.Write("\nsource file:  ");
+        //    file = Console.ReadLine();
+        //}
         try
         {
             var sr = new StreamReader(file);
@@ -49,24 +41,26 @@ public class Compiler
         Parser parser = new Parser(scanner);
         Console.WriteLine();
         sw = new StreamWriter(file + ".il");
-        GenProlog();
         //-----------------------------------------------------lex and syntax analysis:
         parser.Parse();
         //-----------------------------------------------------semantic analysis:
         tree.SemanticAnalysis();
         //-----------------------------------------------------code generating:
+        GenProlog();
+        tree.EmitCode();
         GenEpilog();
         //-----------------------------------------------------
         sw.Close();
         source.Close();
-        if (errors == 0)
-            Console.WriteLine("  compilation successful\n");
-        else
-        {
-            Console.WriteLine($"\n  {errors} errors detected\n");
+        //if (errors == 0)
+        //    Console.WriteLine("  compilation successful\n");
+        //else
+        //{
+            //Console.WriteLine($"\n  {errors} errors detected\n");
             File.Delete(file + ".il");
-        }
-        return errors == 0 ? 0 : 2;
+        //}
+        //return errors == 0 ? 0 : 2;
+        return 0;
     }
 
     public static void EmitCode(string instr = null)
@@ -90,13 +84,13 @@ public class Compiler
         EmitCode("{");
         EmitCode();
 
-        EmitCode("-------------------------// prolog");
+        EmitCode("//------------------------- prolog");
         EmitCode();
     }
 
     private static void GenEpilog()
     {
-        EmitCode("-------------------------// epilog:");
+        EmitCode("//------------------------- epilog:");
         EmitCode("leave EndMain");
         EmitCode("}");
         EmitCode("catch [mscorlib]System.Exception");
@@ -220,7 +214,6 @@ public enum WriteStatType
     Ident, String
 }
 #endregion
-
 #region SyntaxTree
 public abstract class SyntaxTree
 {
@@ -231,7 +224,14 @@ public abstract class SyntaxTree
     {
         _line = line;
     }
-    public abstract string GenCode();
+    public virtual void EmitCode()
+    {
+        for (int i = 0; i < children.Count; i++)
+        {
+            children[i].EmitCode();
+        }
+        Compiler.EmitCode("duuupa");
+    }
     public virtual VariableType SemanticAnalysis()
     {
         for(int i = 0; i < children.Count; i++)
@@ -257,15 +257,17 @@ public abstract class SyntaxTree
         return false;
     }
 }
+#endregion
+#region Expressions
 public class Program : SyntaxTree
 {
     public Program(int lineNum, SyntaxTree child) : base(lineNum)
     {
         children.Add(child);
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
 }
 public class PrimaryExp : SyntaxTree
@@ -284,9 +286,9 @@ public class PrimaryExp : SyntaxTree
     {
         children.Add(child);
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -341,9 +343,9 @@ public class UnaryExp : SyntaxTree
         children.Add(childExp);
         _type = UnaryExpType.UnaryExp;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -406,9 +408,9 @@ public class UnaryOp : SyntaxTree
     {
         _type = type;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
 }
 public class BitwiseExp : SyntaxTree
@@ -425,9 +427,9 @@ public class BitwiseExp : SyntaxTree
         children.Add(childUnExp);
         _type = type;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -463,9 +465,9 @@ public class MulExp : SyntaxTree
         children.Add(childBitExp);
         _type = type;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -485,6 +487,7 @@ public class MulExp : SyntaxTree
             }
             else
             {
+                AddCast(semChildren[0] == VariableType.Int ? 0 : 1);
                 return VariableType.Double;
             }
         }
@@ -493,6 +496,11 @@ public class MulExp : SyntaxTree
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: multiplicative operands must have type int or double"));
             return VariableType.SemError;
         }
+    }
+    private void AddCast(int i)
+    {
+        SyntaxTree node = new UnaryExp(_line, new UnaryOp(_line, UnaryOpType.Cast2Double), children[i]);
+        children[i] = node;
     }
 }
 public class AddExp : SyntaxTree
@@ -509,9 +517,9 @@ public class AddExp : SyntaxTree
         children.Add(childMulExp);
         _type = type;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -531,6 +539,7 @@ public class AddExp : SyntaxTree
             }
             else
             {
+                AddCast(semChildren[0] == VariableType.Int ? 0 : 1);
                 return VariableType.Double;
             }
         }
@@ -539,6 +548,11 @@ public class AddExp : SyntaxTree
             Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: additives operands must have type int or double"));
             return VariableType.SemError;
         }
+    }
+    private void AddCast(int i)
+    {
+        SyntaxTree node = new UnaryExp(_line, new UnaryOp(_line, UnaryOpType.Cast2Double), children[i]);
+        children[i] = node;
     }
 }
 public class RelExp : SyntaxTree
@@ -555,9 +569,9 @@ public class RelExp : SyntaxTree
         children.Add(childAddExp);
         _type = type;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -655,9 +669,9 @@ public class LogExp : SyntaxTree
         children.Add(childRelExp);
         _type = type;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -693,9 +707,9 @@ public class Exp : SyntaxTree
         children.Add(childExp);
         _type = ExpOpType.Assign;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -753,6 +767,8 @@ public class Exp : SyntaxTree
         }
     }
 }
+#endregion
+#region Declarations and Statements
 public class Decl : SyntaxTree
 {
     public string _val;
@@ -762,9 +778,9 @@ public class Decl : SyntaxTree
         _val = val;
         _type = type;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -814,9 +830,9 @@ public class Stat : SyntaxTree
     {
         _ident = ident;
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -849,9 +865,9 @@ public class BlockStat : SyntaxTree
         children.Add(childrentatList);
     }
 
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
 }
 public class MainStat : SyntaxTree
@@ -871,9 +887,9 @@ public class MainStat : SyntaxTree
         children.Add(childDecl);
         children.Add(childrentat);
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
 }
 public class DeclList : SyntaxTree
@@ -890,9 +906,9 @@ public class DeclList : SyntaxTree
         children.Add(childDeclList);
         children.Add(childDecl);
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
 }
 public class StatList : SyntaxTree
@@ -909,9 +925,9 @@ public class StatList : SyntaxTree
         children.Add(childrentatList);
         children.Add(childrentat);
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
 }
 public class SelectionStat : SyntaxTree
@@ -930,9 +946,9 @@ public class SelectionStat : SyntaxTree
         children.Add(childrentat1);
         children.Add(childrentat2);
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
@@ -961,9 +977,9 @@ public class WriteStat : SyntaxTree
                 break;
         }
     }
-    public override string GenCode()
+    public override void EmitCode()
     {
-        throw new NotImplementedException();
+        base.EmitCode();
     }
     public override VariableType SemanticAnalysis()
     {
