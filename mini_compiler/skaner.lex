@@ -7,7 +7,7 @@ Ident			[A-Za-z][A-Za-z0-9]*
 Comments		\/\/(.*)$
 Whitespaces		[ \t\r]+
 Newline			\n
-String			\"(.*)\"
+String			\"((.|\\\")*)\"
 
 %%
 "program"			{ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Program; }

@@ -11,7 +11,7 @@ public class Compiler
     public static List<SemanticError> SemanticErrors = new List<SemanticError>();
     private static StreamWriter sw;
     private static int varNumGenerator = 0;
-    private static int labelNumGenerator = 0;   
+    private static int labelNumGenerator = 0;
 
     public static int Main(string[] args)
     {
@@ -81,6 +81,7 @@ public class Compiler
 
     private static void GenProlog()
     {
+        //EmitCode(".assembly extern System.Private.CoreLib {}");
         EmitCode(".assembly extern mscorlib { }");
         EmitCode(".assembly mini_compiler { }");
         EmitCode(".method static void main()");
@@ -119,21 +120,34 @@ public abstract class Variable
         _name = name;
         _doNotPutOnStack = 0;
     }
+    public abstract VariableType GetVarType();
 }
 public class Bool : Variable
 {
     public bool _val;
     public Bool(string name) : base(VariableType.Bool, name) { }
+    public override VariableType GetVarType()
+    {
+        return VariableType.Bool;
+    }
 }
 public class Int : Variable
 {
     public int _val;
     public Int(string name) : base(VariableType.Int, name) { }
+    public override VariableType GetVarType()
+    {
+        return VariableType.Int;
+    }
 }
 public class Double : Variable
 {
     public double _val;
     public Double(string name) : base(VariableType.Double, name) { }
+    public override VariableType GetVarType()
+    {
+        return VariableType.Double;
+    }
 }
 #endregion
 #region errors
@@ -285,6 +299,7 @@ public class Program : SyntaxTree
     public override void EmitCode()
     {
         base.EmitCode();
+        Compiler.EmitCode("L_END: nop");
     }
 }
 public class PrimaryExp : SyntaxTree
@@ -310,7 +325,7 @@ public class PrimaryExp : SyntaxTree
         switch (_type)
         {
             case PrimaryExpType.Ident:
-                if(Compiler.symbolArray[_val]._doNotPutOnStack > 0)
+                if (Compiler.symbolArray[_val]._doNotPutOnStack > 0)
                 {
                     --Compiler.symbolArray[_val]._doNotPutOnStack;
                 }
@@ -833,7 +848,7 @@ public class Exp : SyntaxTree
     }
     public override void EmitCode()
     {
-        if(_type == ExpOpType.Assign)
+        if (_type == ExpOpType.Assign)
         {
             ++Compiler.symbolArray[GetIdent()]._doNotPutOnStack;
         }
@@ -849,6 +864,7 @@ public class Exp : SyntaxTree
                 }
                 break;
             case ExpOpType.Assign:
+                Compiler.EmitCode("dup");
                 Compiler.EmitCode($"stloc.{Compiler.symbolArray[GetIdent()]._cilNumber}");
                 break;
         }
@@ -997,7 +1013,41 @@ public class Stat : SyntaxTree
     public override void EmitCode()
     {
         base.EmitCode();
+        switch (_type)
+        {
+            case StatType.Block:
+                break;
+            case StatType.Exp:
+                Compiler.EmitCode("pop");
+                break;
+            case StatType.Selection:
+                break;
+            case StatType.While:
+                break;
+            case StatType.Read:
+                Compiler.EmitCode("call string [mscorlib]System.Console::ReadLine()");
+                switch (Compiler.symbolArray[_ident].GetVarType())
+                {
+                    case VariableType.Int:
+                        Compiler.EmitCode("call int32 [mscorlib]System.Convert::ToInt32(string)");
+                        break;
+                    case VariableType.Double:
+                        Compiler.EmitCode("call float64 [mscorlib]System.Convert::ToDouble(string)");
+                        break;
+                    case VariableType.Bool:
+                        Compiler.EmitCode("call bool [mscorlib]System.Convert::ToBoolean(string)");
+                        break;
+                }
+                Compiler.EmitCode($"stloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                break;
+            case StatType.Write:
+                break;
+            case StatType.Return:
+                Compiler.EmitCode("br L_END");
+                break;
+        }
     }
+
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
@@ -1173,8 +1223,36 @@ public class WriteStat : SyntaxTree
     }
     public override void EmitCode()
     {
-        base.EmitCode();
+        switch (_type)
+        {
+            case WriteStatType.Ident:
+                switch (Compiler.symbolArray[_ident].GetVarType())
+                {
+                    case VariableType.Int:
+                        Compiler.EmitCode($"ldloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                        Compiler.EmitCode("call void [mscorlib]System.Console::Write(int32)");
+                        break;
+                    case VariableType.Double:
+                        Compiler.EmitCode("call class [mscorlib]System.Globalization.CultureInfo [mscorlib]System.Globalization.CultureInfo::get_InvariantCulture()");
+                        Compiler.EmitCode("ldstr \"{0:0.000000}\"");
+                        Compiler.EmitCode($"ldloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                        Compiler.EmitCode("box [mscorlib]System.Double");
+                        Compiler.EmitCode("call string [mscorlib]System.String::Format(class [mscorlib]System.IFormatProvider, string, object)");
+                        Compiler.EmitCode("call void [mscorlib]System.Console::Write(string)");
+                        break;
+                    case VariableType.Bool:
+                        Compiler.EmitCode($"ldloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                        Compiler.EmitCode("call void [mscorlib]System.Console::Write(bool)");
+                        break;
+                }
+                break;
+            case WriteStatType.String:
+                Compiler.EmitCode($"ldstr {_stringVal}");
+                Compiler.EmitCode("call void [mscorlib]System.Console::Write(string)");
+                break;
+        }
     }
+
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();

@@ -6,9 +6,9 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-F5UB616
-//  DateTime: 6/23/2020 4:56:19 PM
+//  DateTime: 6/24/2020 1:15:23 AM
 //  UserName: Krzys
-//  GPLEX input file <..\..\skaner.lex - 6/23/2020 4:44:47 PM>
+//  GPLEX input file <..\..\skaner.lex - 6/23/2020 11:11:44 PM>
 //  GPLEX frame file <embedded resource>
 //
 //  Option settings: parser, minimize
