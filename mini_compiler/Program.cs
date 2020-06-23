@@ -11,6 +11,7 @@ public class Compiler
     public static List<SemanticError> SemanticErrors = new List<SemanticError>();
     private static StreamWriter sw;
     private static int varNumGenerator = 0;
+    private static int labelNumGenerator = 0;   
 
     public static int Main(string[] args)
     {
@@ -72,6 +73,10 @@ public class Compiler
     public static int GenVarNum()
     {
         return varNumGenerator++;
+    }
+    public static string GenLabel()
+    {
+        return $"L{labelNumGenerator++}";
     }
 
     private static void GenProlog()
@@ -743,6 +748,7 @@ public class RelExp : SyntaxTree
 public class LogExp : SyntaxTree
 {
     public LogOpType _type;
+    public string _label1 = "", _label2 = "";
     public LogExp(int lineNum, SyntaxTree childRelExp) : base(lineNum)
     {
         children.Add(childRelExp);
@@ -756,20 +762,40 @@ public class LogExp : SyntaxTree
     }
     public override void EmitCode()
     {
-        base.EmitCode();
-        string code = "";
         switch (_type)
         {
             case LogOpType.Empty:
+                children[0].EmitCode();
                 break;
             case LogOpType.And:
-                code = "and";
+                children[0].EmitCode();
+                _label1 = Compiler.GenLabel();
+                _label2 = Compiler.GenLabel();
+                if (((LogExp)children[0])._label1 != "")
+                {
+                    int leftVal = ((LogExp)children[0])._type == LogOpType.And ? 0 : 1;
+                    Compiler.EmitCode($"{((LogExp)children[0])._label1}: ldc.i4.{leftVal}");
+                    Compiler.EmitCode($"{((LogExp)children[0])._label2}:");
+                }
+                Compiler.EmitCode($"brfalse {_label1}");
+                children[1].EmitCode();
+                Compiler.EmitCode($"br {_label2}");
                 break;
             case LogOpType.Or:
-                code = "or";
+                children[0].EmitCode();
+                _label1 = Compiler.GenLabel();
+                _label2 = Compiler.GenLabel();
+                if (((LogExp)children[0])._label1 != "")
+                {
+                    int leftVal = ((LogExp)children[0])._type == LogOpType.And ? 0 : 1;
+                    Compiler.EmitCode($"{((LogExp)children[0])._label1}: ldc.i4.{leftVal}");
+                    Compiler.EmitCode($"{((LogExp)children[0])._label2}:");
+                }
+                Compiler.EmitCode($"brtrue {_label1}");
+                children[1].EmitCode();
+                Compiler.EmitCode($"br {_label2}");
                 break;
         }
-        Compiler.EmitCode(code);
     }
     public override VariableType SemanticAnalysis()
     {
@@ -815,9 +841,14 @@ public class Exp : SyntaxTree
         switch (_type)
         {
             case ExpOpType.Empty:
+                if (((LogExp)children[0])._label1 != "")
+                {
+                    int leftVal = ((LogExp)children[0])._type == LogOpType.And ? 0 : 1;
+                    Compiler.EmitCode($"{((LogExp)children[0])._label1}: ldc.i4.{leftVal}");
+                    Compiler.EmitCode($"{((LogExp)children[0])._label2}:");
+                }
                 break;
             case ExpOpType.Assign:
-                Compiler.EmitCode("dup");
                 Compiler.EmitCode($"stloc.{Compiler.symbolArray[GetIdent()]._cilNumber}");
                 break;
         }

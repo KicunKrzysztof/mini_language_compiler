@@ -10,7 +10,6 @@ Newline			\n
 String			\"(.*)\"
 
 %%
-
 "program"			{ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Program; }
 "if"				{ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.If; }
 "else"				{ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Else; }
@@ -50,8 +49,8 @@ String			\"(.*)\"
 {RealNumber}		{ Console.WriteLine("real num"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.RealNumber; }
 {IntNumber}			{ Console.WriteLine("int num"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.IntNumber; }
 {String}			{ Console.WriteLine("string"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.String; }
-{Whitespaces}		;
 {Comments}			{ Console.WriteLine("komentarz");}
+{Whitespaces}		;
 
 
 %%
