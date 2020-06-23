@@ -6,7 +6,7 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-F5UB616
-//  DateTime: 6/22/2020 2:00:52 AM
+//  DateTime: 6/23/2020 3:28:43 AM
 //  UserName: Krzys
 //  GPLEX input file <..\..\skaner.lex - 6/21/2020 12:19:17 PM>
 //  GPLEX frame file <embedded resource>
