@@ -5,9 +5,8 @@ IntNumber		([1-9][0-9]*)|0
 RealNumber		(0\.[0-9]+)|([1-9][0-9]*\.[0-9]+)
 Ident			[A-Za-z][A-Za-z0-9]*
 Comments		\/\/(.*)$
-Whitespaces		[ \t\r]+
-Newline			\n
-String			\"((.|\\\")*)\"
+Whitespaces		[ \t\r\n]+
+String			\"(\\.|[^"\n\\])*\"
 
 %%
 "program"			{ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Program; }
@@ -44,7 +43,6 @@ String			\"((.|\\\")*)\"
 "{"					{ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.OpenCurly; }
 "}"					{ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.CloseCurly; }
 ";"					{ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Semicolon; }
-{Newline}			;
 {Ident}				{ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.Ident; }
 {IntNumber}			{ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.IntNumber; }
 {RealNumber}		{ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.RealNumber; }

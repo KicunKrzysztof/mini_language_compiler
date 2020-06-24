@@ -269,6 +269,10 @@ main_statement
 		{
 			$$ = new MainStat(@1.StartLine, MainStatType.DeclStat, $2, $3);
 		}
+	| error
+		{
+			Compiler.syntaxErrors.Add(new SyntaxError(@1.StartLine, "error"));
+		}
 	;
 
 declaration_list
@@ -305,15 +309,15 @@ selection_statement
 	;
 
 write_statement
-	: Write Ident Semicolon
+	: Write expression Semicolon
 		{
-			$$ = new WriteStat(@1.StartLine, WriteStatType.Ident, $2);
+			$$ = new WriteStat(@1.StartLine, WriteStatType.Exp, $2);
 		}
 	| Write String Semicolon
 		{
 			$$ = new WriteStat(@1.StartLine, WriteStatType.String, $2);
 		}
-	;
+	;	
 
 %%
 

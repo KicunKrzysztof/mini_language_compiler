@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-F5UB616
-// DateTime: 6/24/2020 3:40:23 AM
+// DateTime: 6/24/2020 6:50:23 PM
 // UserName: Krzys
-// Input file <..\..\parser.y - 6/21/2020 4:06:50 PM>
+// Input file <..\..\parser.y - 6/24/2020 5:26:44 PM>
 
 // options: lines gplex
 
@@ -59,8 +59,8 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #pragma warning disable 649
   private static Dictionary<int, string> aliases;
 #pragma warning restore 649
-  private static Rule[] rules = new Rule[61];
-  private static State[] states = new State[111];
+  private static Rule[] rules = new Rule[62];
+  private static State[] states = new State[112];
   private static string[] nonTerms = new string[] {
       "program", "declaration", "primary_expression", "unary_expression", "unary_operator", 
       "bitwise_expression", "multiplicative_expression", "additive_expression", 
@@ -72,13 +72,13 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     states[0] = new State(new int[]{4,3},new int[]{-1,1});
     states[1] = new State(new int[]{3,2});
     states[2] = new State(-1);
-    states[3] = new State(new int[]{35,5},new int[]{-17,4});
+    states[3] = new State(new int[]{35,5,2,111},new int[]{-17,4});
     states[4] = new State(-2);
     states[5] = new State(new int[]{36,6,35,11,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54,5,72,7,79,8,84,9,88,10,93,11,101,12,104,13,107},new int[]{-14,7,-13,96,-12,95,-18,10,-11,15,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50,-15,71,-16,87,-2,110});
     states[6] = new State(-49);
     states[7] = new State(new int[]{36,8,35,11,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54,5,72,7,79,8,84,9,88,10,93},new int[]{-12,9,-18,10,-11,15,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50,-15,71,-16,87});
     states[8] = new State(-50);
-    states[9] = new State(-56);
+    states[9] = new State(-57);
     states[10] = new State(-40);
     states[11] = new State(new int[]{36,12,35,11,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54,5,72,7,79,8,84,9,88,10,93},new int[]{-14,13,-12,95,-18,10,-11,15,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50,-15,71,-16,87});
     states[12] = new State(-47);
@@ -145,9 +145,9 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     states[73] = new State(new int[]{38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54},new int[]{-11,74,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50});
     states[74] = new State(new int[]{34,75});
     states[75] = new State(new int[]{35,11,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54,5,72,7,79,8,84,9,88,10,93},new int[]{-12,76,-18,10,-11,15,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50,-15,71,-16,87});
-    states[76] = new State(new int[]{6,77,36,-57,35,-57,38,-57,14,-57,15,-57,39,-57,40,-57,33,-57,28,-57,32,-57,31,-57,5,-57,7,-57,8,-57,9,-57,10,-57});
+    states[76] = new State(new int[]{6,77,36,-58,35,-58,38,-58,14,-58,15,-58,39,-58,40,-58,33,-58,28,-58,32,-58,31,-58,5,-58,7,-58,8,-58,9,-58,10,-58});
     states[77] = new State(new int[]{35,11,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54,5,72,7,79,8,84,9,88,10,93},new int[]{-12,78,-18,10,-11,15,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50,-15,71,-16,87});
-    states[78] = new State(-58);
+    states[78] = new State(-59);
     states[79] = new State(new int[]{33,80});
     states[80] = new State(new int[]{38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54},new int[]{-11,81,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50});
     states[81] = new State(new int[]{34,82});
@@ -157,19 +157,19 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     states[85] = new State(new int[]{37,86});
     states[86] = new State(-44);
     states[87] = new State(-45);
-    states[88] = new State(new int[]{38,89,41,91});
+    states[88] = new State(new int[]{41,91,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54},new int[]{-11,89,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50});
     states[89] = new State(new int[]{37,90});
-    states[90] = new State(-59);
+    states[90] = new State(-60);
     states[91] = new State(new int[]{37,92});
-    states[92] = new State(-60);
+    states[92] = new State(-61);
     states[93] = new State(new int[]{37,94});
     states[94] = new State(-46);
-    states[95] = new State(-55);
+    states[95] = new State(-56);
     states[96] = new State(new int[]{36,97,35,11,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54,5,72,7,79,8,84,9,88,10,93,11,101,12,104,13,107},new int[]{-14,98,-2,100,-12,95,-18,10,-11,15,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50,-15,71,-16,87});
     states[97] = new State(-51);
     states[98] = new State(new int[]{36,99,35,11,38,29,14,30,15,31,39,32,40,33,33,34,28,52,32,53,31,54,5,72,7,79,8,84,9,88,10,93},new int[]{-12,9,-18,10,-11,15,-10,17,-9,41,-8,66,-7,57,-6,56,-4,55,-3,28,-5,50,-15,71,-16,87});
     states[99] = new State(-52);
-    states[100] = new State(-54);
+    states[100] = new State(-55);
     states[101] = new State(new int[]{38,102});
     states[102] = new State(new int[]{37,103});
     states[103] = new State(-37);
@@ -179,7 +179,8 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     states[107] = new State(new int[]{38,108});
     states[108] = new State(new int[]{37,109});
     states[109] = new State(-39);
-    states[110] = new State(-53);
+    states[110] = new State(-54);
+    states[111] = new State(-53);
 
     for (int sNo = 0; sNo < states.Length; sNo++) states[sNo].number = sNo;
 
@@ -235,14 +236,15 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     rules[50] = new Rule(-17, new int[]{35,-14,36});
     rules[51] = new Rule(-17, new int[]{35,-13,36});
     rules[52] = new Rule(-17, new int[]{35,-13,-14,36});
-    rules[53] = new Rule(-13, new int[]{-2});
-    rules[54] = new Rule(-13, new int[]{-13,-2});
-    rules[55] = new Rule(-14, new int[]{-12});
-    rules[56] = new Rule(-14, new int[]{-14,-12});
-    rules[57] = new Rule(-15, new int[]{5,33,-11,34,-12});
-    rules[58] = new Rule(-15, new int[]{5,33,-11,34,-12,6,-12});
-    rules[59] = new Rule(-16, new int[]{9,38,37});
-    rules[60] = new Rule(-16, new int[]{9,41,37});
+    rules[53] = new Rule(-17, new int[]{2});
+    rules[54] = new Rule(-13, new int[]{-2});
+    rules[55] = new Rule(-13, new int[]{-13,-2});
+    rules[56] = new Rule(-14, new int[]{-12});
+    rules[57] = new Rule(-14, new int[]{-14,-12});
+    rules[58] = new Rule(-15, new int[]{5,33,-11,34,-12});
+    rules[59] = new Rule(-15, new int[]{5,33,-11,34,-12,6,-12});
+    rules[60] = new Rule(-16, new int[]{9,-11,37});
+    rules[61] = new Rule(-16, new int[]{9,41,37});
   }
 
   protected override void Initialize() {
@@ -616,58 +618,65 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 		}
 #line default
         break;
-      case 53: // declaration_list -> declaration
-#line 276 "..\..\parser.y"
+      case 53: // main_statement -> error
+#line 273 "..\..\parser.y"
+  {
+			Compiler.syntaxErrors.Add(new SyntaxError(LocationStack[LocationStack.Depth-1].StartLine, "error"));
+		}
+#line default
+        break;
+      case 54: // declaration_list -> declaration
+#line 280 "..\..\parser.y"
   {
 			CurrentSemanticValue.node = new DeclList(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
-      case 54: // declaration_list -> declaration_list, declaration
-#line 280 "..\..\parser.y"
+      case 55: // declaration_list -> declaration_list, declaration
+#line 284 "..\..\parser.y"
   {
 			CurrentSemanticValue.node = new DeclList(LocationStack[LocationStack.Depth-2].StartLine, ValueStack[ValueStack.Depth-2].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
-      case 55: // statement_list -> statement
-#line 287 "..\..\parser.y"
+      case 56: // statement_list -> statement
+#line 291 "..\..\parser.y"
   {
 			CurrentSemanticValue.node = new StatList(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
-      case 56: // statement_list -> statement_list, statement
-#line 291 "..\..\parser.y"
+      case 57: // statement_list -> statement_list, statement
+#line 295 "..\..\parser.y"
   {
 			CurrentSemanticValue.node = new StatList(LocationStack[LocationStack.Depth-2].StartLine, ValueStack[ValueStack.Depth-2].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
-      case 57: // selection_statement -> If, OpenPar, expression, ClosePar, statement
-#line 298 "..\..\parser.y"
+      case 58: // selection_statement -> If, OpenPar, expression, ClosePar, statement
+#line 302 "..\..\parser.y"
   {
 			CurrentSemanticValue.node = new SelectionStat(LocationStack[LocationStack.Depth-5].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
-      case 58: // selection_statement -> If, OpenPar, expression, ClosePar, statement, Else, 
+      case 59: // selection_statement -> If, OpenPar, expression, ClosePar, statement, Else, 
                //                        statement
-#line 302 "..\..\parser.y"
+#line 306 "..\..\parser.y"
   {
 			CurrentSemanticValue.node = new SelectionStat(LocationStack[LocationStack.Depth-7].StartLine, ValueStack[ValueStack.Depth-5].node, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
-      case 59: // write_statement -> Write, Ident, Semicolon
-#line 309 "..\..\parser.y"
+      case 60: // write_statement -> Write, expression, Semicolon
+#line 313 "..\..\parser.y"
   {
-			CurrentSemanticValue.node = new WriteStat(LocationStack[LocationStack.Depth-3].StartLine, WriteStatType.Ident, ValueStack[ValueStack.Depth-2].val);
+			CurrentSemanticValue.node = new WriteStat(LocationStack[LocationStack.Depth-3].StartLine, WriteStatType.Exp, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
-      case 60: // write_statement -> Write, String, Semicolon
-#line 313 "..\..\parser.y"
+      case 61: // write_statement -> Write, String, Semicolon
+#line 317 "..\..\parser.y"
   {
 			CurrentSemanticValue.node = new WriteStat(LocationStack[LocationStack.Depth-3].StartLine, WriteStatType.String, ValueStack[ValueStack.Depth-2].val);
 		}
@@ -687,7 +696,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 319 "..\..\parser.y"
+#line 323 "..\..\parser.y"
 
 public Parser(Scanner scanner) : base(scanner) { }
 #line default

@@ -9,6 +9,7 @@ public class Compiler
     public static SyntaxTree tree;
     public static Dictionary<string, Variable> symbolArray = new Dictionary<string, Variable>();
     public static List<SemanticError> SemanticErrors = new List<SemanticError>();
+    public static List<SyntaxError> syntaxErrors = new List<SyntaxError>();
     private static StreamWriter sw;
     private static int varNumGenerator = 0;
     private static int labelNumGenerator = 0;
@@ -39,12 +40,20 @@ public class Compiler
         Console.WriteLine();
         sw = new StreamWriter(file + ".il");
         //-----------------------------------------------------lex and syntax analysis:
-        parser.Parse();
+        bool parseRes = parser.Parse();
+        if (!parseRes || syntaxErrors.Count != 0)
+        {
+            foreach (SyntaxError err in syntaxErrors)
+            {
+                Console.WriteLine($"{err._description}, occurs in line number: {err._lineNum}");
+            }
+            return 1;
+        }
         //-----------------------------------------------------semantic analysis:
         tree.SemanticAnalysis();
         if (SemanticErrors.Count > 0)
         {
-            foreach(SemanticError err in SemanticErrors)
+            foreach (SemanticError err in SemanticErrors)
             {
                 Console.WriteLine($"{err._description}, occurs in line number: {err._lineNum}");
             }
@@ -84,6 +93,7 @@ public class Compiler
         EmitCode(".entrypoint");
         EmitCode(".try");
         EmitCode("{");
+        EmitCode(".maxstack  64");
         EmitCode("//------------------------- prolog");
     }
 
@@ -151,6 +161,16 @@ public class SemanticError
     public int _lineNum;
     public string _description;
     public SemanticError(int lineNum, string description)
+    {
+        _lineNum = lineNum;
+        _description = description;
+    }
+}
+public class SyntaxError
+{
+    public int _lineNum;
+    public string _description;
+    public SyntaxError(int lineNum, string description)
     {
         _lineNum = lineNum;
         _description = description;
@@ -228,7 +248,7 @@ public enum SelectionStatType
 }
 public enum WriteStatType
 {
-    Ident, String
+    Exp, String
 }
 #endregion
 #region SyntaxTree
@@ -326,7 +346,7 @@ public class PrimaryExp : SyntaxTree
                 }
                 else
                 {
-                    code = $"ldloc.{Compiler.symbolArray[_val]._cilNumber}";
+                    code = $"ldloc {Compiler.symbolArray[_val]._cilNumber}";
                 }
                 break;
             case PrimaryExpType.False:
@@ -728,6 +748,11 @@ public class RelExp : SyntaxTree
                 AddCast(semChildren[0] == VariableType.Int ? 0 : 1);
             return VariableType.Bool;
         }
+        else if ((_type == RelOpType.Equals || _type == RelOpType.NotEquals) 
+            && semChildren[0] == VariableType.Bool && semChildren[1] == VariableType.Bool)
+        {
+            return VariableType.Bool;
+        }
         else
         {
             switch (_type)
@@ -860,7 +885,7 @@ public class Exp : SyntaxTree
                 break;
             case ExpOpType.Assign:
                 Compiler.EmitCode("dup");
-                Compiler.EmitCode($"stloc.{Compiler.symbolArray[GetIdent()]._cilNumber}");
+                Compiler.EmitCode($"stloc {Compiler.symbolArray[GetIdent()]._cilNumber}");
                 break;
         }
     }
@@ -1038,7 +1063,7 @@ public class Stat : SyntaxTree
                         Compiler.EmitCode("call bool [mscorlib]System.Convert::ToBoolean(string)");
                         break;
                 }
-                Compiler.EmitCode($"stloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                Compiler.EmitCode($"stloc {Compiler.symbolArray[_ident]._cilNumber}");
                 break;
             case StatType.Return:
                 Compiler.EmitCode("br L_END");
@@ -1229,42 +1254,39 @@ public class SelectionStat : SyntaxTree
 }
 public class WriteStat : SyntaxTree
 {
-    public string _stringVal = "", _ident = "";
+    public string _stringVal = "";
     public WriteStatType _type;
-    public WriteStat(int lineNum, WriteStatType type, string stringOrIdent) : base(lineNum)
+    public WriteStat(int lineNum, WriteStatType type, string stringVal) : base(lineNum)
     {
         _type = type;
-        switch (_type)
-        {
-            case WriteStatType.Ident:
-                _ident = stringOrIdent;
-                break;
-            case WriteStatType.String:
-                _stringVal = stringOrIdent;
-                break;
-        }
+        _stringVal = stringVal;
+    }
+    public WriteStat(int lineNum, WriteStatType type, SyntaxTree childExp) : base(lineNum)
+    {
+        _type = type;
+        children.Add(childExp);
     }
     public override void EmitCode()
     {
         switch (_type)
         {
-            case WriteStatType.Ident:
-                switch (Compiler.symbolArray[_ident].GetVarType())
+            case WriteStatType.Exp:
+                switch (semChildren[0])
                 {
                     case VariableType.Int:
-                        Compiler.EmitCode($"ldloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                        children[0].EmitCode();
                         Compiler.EmitCode("call void [mscorlib]System.Console::Write(int32)");
                         break;
                     case VariableType.Double:
                         Compiler.EmitCode("call class [mscorlib]System.Globalization.CultureInfo [mscorlib]System.Globalization.CultureInfo::get_InvariantCulture()");
                         Compiler.EmitCode("ldstr \"{0:0.000000}\"");
-                        Compiler.EmitCode($"ldloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                        children[0].EmitCode();
                         Compiler.EmitCode("box [mscorlib]System.Double");
                         Compiler.EmitCode("call string [mscorlib]System.String::Format(class [mscorlib]System.IFormatProvider, string, object)");
                         Compiler.EmitCode("call void [mscorlib]System.Console::Write(string)");
                         break;
                     case VariableType.Bool:
-                        Compiler.EmitCode($"ldloc.{Compiler.symbolArray[_ident]._cilNumber}");
+                        children[0].EmitCode();
                         Compiler.EmitCode("call void [mscorlib]System.Console::Write(bool)");
                         break;
                 }
@@ -1279,11 +1301,12 @@ public class WriteStat : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
-        if (_type == WriteStatType.Ident && !Compiler.symbolArray.ContainsKey(_ident))
+        if (_type == WriteStatType.Exp && semChildren[0] != VariableType.Bool && semChildren[0] != VariableType.Int && semChildren[0] != VariableType.Double)
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: identifier not declared"));
+            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: this is not a valid expression"));
+            return VariableType.SemError;
         }
-        return VariableType.SemError;
+        return VariableType.NoVariable;
     }
 }
 
