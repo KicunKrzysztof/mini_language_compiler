@@ -6,9 +6,9 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-F5UB616
-//  DateTime: 6/24/2020 1:15:23 AM
+//  DateTime: 6/24/2020 3:40:23 AM
 //  UserName: Krzys
-//  GPLEX input file <..\..\skaner.lex - 6/23/2020 11:11:44 PM>
+//  GPLEX input file <..\..\skaner.lex - 6/24/2020 3:24:25 AM>
 //  GPLEX frame file <embedded resource>
 //
 //  Option settings: parser, minimize
@@ -179,7 +179,7 @@ namespace GardensPoint
 /* NxS[   8] */ new Table(0, 0, -1, null),
 /* NxS[   9] */ new Table(0, 0, -1, null),
 /* NxS[  10] */ new Table(47, 1, -1, new sbyte[] {86}),
-/* NxS[  11] */ new Table(0, 0, -1, null),
+/* NxS[  11] */ new Table(46, 1, -1, new sbyte[] {85}),
 /* NxS[  12] */ new Table(46, 12, -1, new sbyte[] {85, -1, 12, 12, 12, 12, 
           12, 12, 12, 12, 12, 12}),
 /* NxS[  13] */ new Table(0, 0, -1, null),
@@ -963,47 +963,44 @@ int NextState() {
 ;
             break;
         case 3:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Not;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Not;
             break;
         case 4:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.BitwiseAnd;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.BitwiseAnd;
             break;
         case 5:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.OpenPar;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.OpenPar;
             break;
         case 6:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.ClosePar;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.ClosePar;
             break;
         case 7:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Mul;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Mul;
             break;
         case 8:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Plus;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Plus;
             break;
         case 9:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Minus;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Minus;
             break;
         case 10:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Div;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Div;
             break;
         case 11:
-        case 77:
-Console.WriteLine("real num"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.RealNumber;
-            break;
         case 12:
-Console.WriteLine("int num"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.IntNumber;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.IntNumber;
             break;
         case 13:
-Console.WriteLine(";"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Semicolon;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Semicolon;
             break;
         case 14:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.LessThan;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.LessThan;
             break;
         case 15:
-Console.WriteLine("="); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Assign;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Assign;
             break;
         case 16:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.GreaterThan;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.GreaterThan;
             break;
         case 17:
         case 18:
@@ -1045,81 +1042,84 @@ Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tok
         case 69:
         case 71:
         case 72:
-Console.WriteLine("identyfikator"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.Ident;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.Ident;
             break;
         case 27:
-Console.WriteLine("{"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.OpenCurly;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.OpenCurly;
             break;
         case 28:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.BitwiseOr;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.BitwiseOr;
             break;
         case 29:
-Console.WriteLine("}"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.CloseCurly;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.CloseCurly;
             break;
         case 30:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.BitwiseNot;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.BitwiseNot;
             break;
         case 31:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Or;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Or;
             break;
         case 36:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Write;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Write;
             break;
         case 39:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.While;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.While;
             break;
         case 42:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.True;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.True;
             break;
         case 48:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Return;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Return;
             break;
         case 49:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Read;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Read;
             break;
         case 55:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Program;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Program;
             break;
         case 56:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.If;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.If;
             break;
         case 58:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Int;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Int;
             break;
         case 62:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.False;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.False;
             break;
         case 65:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Else;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Else;
             break;
         case 70:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Double;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Double;
             break;
         case 73:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Bool;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Bool;
             break;
         case 74:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.GreaterEqual;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.GreaterEqual;
             break;
         case 75:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Equals;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.Equals;
             break;
         case 76:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.LessEqual;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.LessEqual;
+            break;
+        case 77:
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.RealNumber;
             break;
         case 78:
         case 79:
 _yytrunc(1); 
-Console.WriteLine("komentarz");
+;
             break;
         case 80:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.And;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.And;
             break;
         case 81:
-Console.WriteLine("string"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.String;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); yylval.val=yytext; return(int)Tokens.String;
             break;
         case 82:
-Console.WriteLine("program"); yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.NotEquals;
+yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol); return (int)Tokens.NotEquals;
             break;
         default:
             break;

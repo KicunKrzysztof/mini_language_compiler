@@ -19,13 +19,8 @@ public class Compiler
         FileStream source;
         Console.WriteLine("\nMulti-Pass mini language compiler - Gardens Point");
         file = "input.txt";
-        //if (args.Length >= 1)
-        //    file = args[0];
-        //else
-        //{
-        //    Console.Write("\nsource file:  ");
-        //    file = Console.ReadLine();
-        //}
+        if (args.Length >= 1)
+            file = args[0];
         try
         {
             var sr = new StreamReader(file);
@@ -47,6 +42,14 @@ public class Compiler
         parser.Parse();
         //-----------------------------------------------------semantic analysis:
         tree.SemanticAnalysis();
+        if (SemanticErrors.Count > 0)
+        {
+            foreach(SemanticError err in SemanticErrors)
+            {
+                Console.WriteLine($"{err._description}, occurs in line number: {err._lineNum}");
+            }
+            return 1;
+        }
         //-----------------------------------------------------code generating:
         GenProlog();
         tree.EmitCode();
@@ -54,14 +57,6 @@ public class Compiler
         //-----------------------------------------------------
         sw.Close();
         source.Close();
-        //if (errors == 0)
-        //    Console.WriteLine("  compilation successful\n");
-        //else
-        //{
-        //Console.WriteLine($"\n  {errors} errors detected\n");
-        //File.Delete(file + ".il");
-        //}
-        //return errors == 0 ? 0 : 2;
         return 0;
     }
 
@@ -153,8 +148,8 @@ public class Double : Variable
 #region errors
 public class SemanticError
 {
-    int _lineNum;
-    string _description;
+    public int _lineNum;
+    public string _description;
     public SemanticError(int lineNum, string description)
     {
         _lineNum = lineNum;
@@ -993,6 +988,7 @@ public class Stat : SyntaxTree
 {
     public StatType _type;
     public string _ident = "";
+    private string _label1, _label2;
     public Stat(int lineNum, StatType type) : base(lineNum)
     {
         _type = type;
@@ -1012,17 +1008,21 @@ public class Stat : SyntaxTree
     }
     public override void EmitCode()
     {
-        base.EmitCode();
         switch (_type)
         {
-            case StatType.Block:
-                break;
             case StatType.Exp:
+                base.EmitCode();
                 Compiler.EmitCode("pop");
                 break;
-            case StatType.Selection:
-                break;
             case StatType.While:
+                _label1 = Compiler.GenLabel();
+                _label2 = Compiler.GenLabel();
+                Compiler.EmitCode($"br {_label1}");
+                Compiler.EmitCode($"{_label2}:");
+                children[1].EmitCode();
+                Compiler.EmitCode($"{_label1}:");
+                children[0].EmitCode();
+                Compiler.EmitCode($"brtrue {_label2}");
                 break;
             case StatType.Read:
                 Compiler.EmitCode("call string [mscorlib]System.Console::ReadLine()");
@@ -1040,10 +1040,11 @@ public class Stat : SyntaxTree
                 }
                 Compiler.EmitCode($"stloc.{Compiler.symbolArray[_ident]._cilNumber}");
                 break;
-            case StatType.Write:
-                break;
             case StatType.Return:
                 Compiler.EmitCode("br L_END");
+                break;
+            default:
+                base.EmitCode();
                 break;
         }
     }
@@ -1177,23 +1178,45 @@ public class StatList : SyntaxTree
 public class SelectionStat : SyntaxTree
 {
     public SelectionStatType _type;
-    public SelectionStat(int lineNum, SyntaxTree childExp, SyntaxTree childrentat) : base(lineNum)
+    private string _label1, _label2;
+    public SelectionStat(int lineNum, SyntaxTree childExp, SyntaxTree childStat) : base(lineNum)
     {
         _type = SelectionStatType.If;
         children.Add(childExp);
-        children.Add(childrentat);
+        children.Add(childStat);
     }
-    public SelectionStat(int lineNum, SyntaxTree childExp, SyntaxTree childrentat1, SyntaxTree childrentat2) : base(lineNum)
+    public SelectionStat(int lineNum, SyntaxTree childExp, SyntaxTree childStat1, SyntaxTree childStat2) : base(lineNum)
     {
         _type = SelectionStatType.IfElse;
         children.Add(childExp);
-        children.Add(childrentat1);
-        children.Add(childrentat2);
+        children.Add(childStat1);
+        children.Add(childStat2);
     }
     public override void EmitCode()
     {
-        base.EmitCode();
+        switch (_type)
+        {
+            case SelectionStatType.If:
+                children[0].EmitCode();
+                _label1 = Compiler.GenLabel();
+                Compiler.EmitCode($"brfalse {_label1}");
+                children[1].EmitCode();
+                Compiler.EmitCode($"{_label1}:");
+                break;
+            case SelectionStatType.IfElse:
+                children[0].EmitCode();
+                _label1 = Compiler.GenLabel();
+                Compiler.EmitCode($"brfalse {_label1}");
+                children[1].EmitCode();
+                _label2 = Compiler.GenLabel();
+                Compiler.EmitCode($"br {_label2}");
+                Compiler.EmitCode($"{_label1}:");
+                children[2].EmitCode();
+                Compiler.EmitCode($"{_label2}:");
+                break;
+        }
     }
+
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
