@@ -7,7 +7,6 @@ Ident			[A-Za-z][A-Za-z0-9]*
 Comments		\/\/(.*)$
 Whitespaces		[ \t\r\n]+
 String			\"(\\.|[^"\n\\])*\"
-Error			[_`@#%':\$\?\\\]\[]+
 
 %%
 "program"			{ return (int)Tokens.Program; }
@@ -50,8 +49,7 @@ Error			[_`@#%':\$\?\\\]\[]+
 {String}			{ yylval.val=yytext; return(int)Tokens.String; }
 {Comments}			;
 {Whitespaces}		;
-{Error}				{ Compiler.lexErrors.Add(new LexError(tokLin, String.Format("Lexical error, invalid characters: {0}", yytext)));}
-
+.					{Compiler.lexErrors.Add(new LexError(tokLin, String.Format("Lexical error, invalid characters: {0}", yytext)));}
 %{
   yylloc = new LexLocation(tokLin, tokCol, tokELin, tokECol);
 %}

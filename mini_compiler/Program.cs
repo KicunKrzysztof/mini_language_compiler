@@ -42,6 +42,7 @@ public class Compiler
         //-----------------------------------------------------lex and syntax analysis:
         if (!parser.Parse() || syntaxErrors.Count != 0 || lexErrors.Count != 0)
         {
+            Console.WriteLine("Compilation failed");
             foreach (LexError err in lexErrors)
                 Console.WriteLine($"{err._description}, occurs in line: {err._lineNum}");
             foreach (SyntaxError err in syntaxErrors)
@@ -52,6 +53,7 @@ public class Compiler
         tree.SemanticAnalysis();
         if (semanticErrors.Count > 0)
         {
+            Console.WriteLine("Compilation failed");
             foreach (SemanticError err in semanticErrors)
                 Console.WriteLine($"{err._description}, occurs in line: {err._lineNum}");
             return 1;
@@ -1230,7 +1232,7 @@ public class WriteStat : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
-        if (_type == WriteStatType.Exp && _semChildren[0] != VariableType.Bool && _semChildren[0] != VariableType.Int && _semChildren[0] != VariableType.Double)
+        if (_type == WriteStatType.Exp && _semChildren[0] == VariableType.NoVariable)
         {
             Compiler.semanticErrors.Add(new SemanticError(_line, "Error: this is not a valid expression"));
             return VariableType.SemError;

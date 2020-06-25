@@ -239,6 +239,14 @@ statement
 		{
 			$$ = new Stat(@1.StartLine, StatType.Return);
 		}
+	| error Semicolon
+		{
+			Compiler.syntaxErrors.Add(new SyntaxError(@1.StartLine, "Syntax error"));
+		}
+	| While OpenPar error ClosePar statement
+		{
+			Compiler.syntaxErrors.Add(new SyntaxError(@1.StartLine, "Syntax error"));
+		}
 	;
 
 block_statement
@@ -249,6 +257,10 @@ block_statement
 	| OpenCurly statement_list CloseCurly
 		{
 			$$ = new BlockStat(@1.StartLine, $2);
+		}
+	| OpenCurly error CloseCurly
+		{
+			Compiler.syntaxErrors.Add(new SyntaxError(@1.StartLine, "Syntax error"));
 		}
 	;
 
@@ -269,7 +281,7 @@ main_statement
 		{
 			$$ = new MainStat(@1.StartLine, MainStatType.DeclStat, $2, $3);
 		}
-	| error
+	| OpenCurly error CloseCurly
 		{
 			Compiler.syntaxErrors.Add(new SyntaxError(@1.StartLine, "Syntax error"));
 		}
