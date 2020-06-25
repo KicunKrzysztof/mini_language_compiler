@@ -50,8 +50,8 @@ public class Compiler
             return 1;
         }
         //-----------------------------------------------------semantic analysis:
-        tree.SemanticAnalysis();
-        if (semanticErrors.Count > 0)
+        tree?.SemanticAnalysis();
+        if (semanticErrors.Count > 0 || tree == null)
         {
             Console.WriteLine("Compilation failed");
             foreach (SemanticError err in semanticErrors)
@@ -65,6 +65,7 @@ public class Compiler
         //-----------------------------------------------------
         sw.Close();
         source.Close();
+        Console.WriteLine("Compilation succeeded");
         return 0;
     }
 

@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-F5UB616
-// DateTime: 6/25/2020 12:59:11 PM
+// DateTime: 6/25/2020 1:17:02 PM
 // UserName: Krzys
-// Input file <..\..\parser.y - 6/25/2020 12:59:04 PM>
+// Input file <..\..\kompilator.y - 6/25/2020 1:16:59 PM>
 
 // options: lines gplex
 
@@ -28,7 +28,7 @@ public enum Tokens {error=2,EOF=3,Program=4,If=5,Else=6,
     Semicolon=37,Ident=38,RealNumber=39,IntNumber=40,String=41};
 
 public struct ValueType
-#line 4 "..\..\parser.y"
+#line 4 "..\..\kompilator.y"
 {
 	public string val;
 	public SyntaxTree node;
@@ -271,175 +271,175 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     switch (action)
     {
       case 2: // program -> Program, main_statement
-#line 24 "..\..\parser.y"
+#line 24 "..\..\kompilator.y"
   {
 			Compiler.tree = new Program(LocationStack[LocationStack.Depth-2].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 3: // primary_expression -> Ident
-#line 33 "..\..\parser.y"
+#line 33 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new PrimaryExp(LocationStack[LocationStack.Depth-1].StartLine, PrimaryExpType.Ident, ValueStack[ValueStack.Depth-1].val);
 		}
 #line default
         break;
       case 4: // primary_expression -> False
-#line 37 "..\..\parser.y"
+#line 37 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new PrimaryExp(LocationStack[LocationStack.Depth-1].StartLine, PrimaryExpType.False, "false");
 		}
 #line default
         break;
       case 5: // primary_expression -> True
-#line 41 "..\..\parser.y"
+#line 41 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new PrimaryExp(LocationStack[LocationStack.Depth-1].StartLine, PrimaryExpType.True, "true");
 		}
 #line default
         break;
       case 6: // primary_expression -> RealNumber
-#line 45 "..\..\parser.y"
+#line 45 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new PrimaryExp(LocationStack[LocationStack.Depth-1].StartLine, PrimaryExpType.RealNumber, ValueStack[ValueStack.Depth-1].val);
 		}
 #line default
         break;
       case 7: // primary_expression -> IntNumber
-#line 49 "..\..\parser.y"
+#line 49 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new PrimaryExp(LocationStack[LocationStack.Depth-1].StartLine, PrimaryExpType.IntNumber, ValueStack[ValueStack.Depth-1].val);
 		}
 #line default
         break;
       case 8: // primary_expression -> OpenPar, expression, ClosePar
-#line 53 "..\..\parser.y"
+#line 53 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new PrimaryExp(LocationStack[LocationStack.Depth-3].StartLine, PrimaryExpType.Exp, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
       case 9: // unary_expression -> primary_expression
-#line 60 "..\..\parser.y"
+#line 60 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new UnaryExp(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 10: // unary_expression -> unary_operator, unary_expression
-#line 64 "..\..\parser.y"
+#line 64 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new UnaryExp(LocationStack[LocationStack.Depth-2].StartLine, ValueStack[ValueStack.Depth-2].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 11: // unary_operator -> Minus
-#line 71 "..\..\parser.y"
+#line 71 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new UnaryOp(LocationStack[LocationStack.Depth-1].StartLine, UnaryOpType.Minus);
 		}
 #line default
         break;
       case 12: // unary_operator -> BitwiseNot
-#line 75 "..\..\parser.y"
+#line 75 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new UnaryOp(LocationStack[LocationStack.Depth-1].StartLine, UnaryOpType.BitwiseNot);
 		}
 #line default
         break;
       case 13: // unary_operator -> Not
-#line 79 "..\..\parser.y"
+#line 79 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new UnaryOp(LocationStack[LocationStack.Depth-1].StartLine, UnaryOpType.Not);
 		}
 #line default
         break;
       case 14: // unary_operator -> OpenPar, Double, ClosePar
-#line 83 "..\..\parser.y"
+#line 83 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new UnaryOp(LocationStack[LocationStack.Depth-3].StartLine, UnaryOpType.Cast2Double);
 		}
 #line default
         break;
       case 15: // unary_operator -> OpenPar, Int, ClosePar
-#line 87 "..\..\parser.y"
+#line 87 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new UnaryOp(LocationStack[LocationStack.Depth-3].StartLine, UnaryOpType.Cast2Int);
 		}
 #line default
         break;
       case 16: // bitwise_expression -> unary_expression
-#line 94 "..\..\parser.y"
+#line 94 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new BitwiseExp(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 17: // bitwise_expression -> bitwise_expression, BitwiseOr, unary_expression
-#line 98 "..\..\parser.y"
+#line 98 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new BitwiseExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, BitwiseOpType.Or);
 		}
 #line default
         break;
       case 18: // bitwise_expression -> bitwise_expression, BitwiseAnd, unary_expression
-#line 102 "..\..\parser.y"
+#line 102 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new BitwiseExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, BitwiseOpType.And);
 		}
 #line default
         break;
       case 19: // multiplicative_expression -> bitwise_expression
-#line 109 "..\..\parser.y"
+#line 109 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new MulExp(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 20: // multiplicative_expression -> multiplicative_expression, Mul, bitwise_expression
-#line 113 "..\..\parser.y"
+#line 113 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new MulExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, MulOpType.Mul);
 		}
 #line default
         break;
       case 21: // multiplicative_expression -> multiplicative_expression, Div, bitwise_expression
-#line 117 "..\..\parser.y"
+#line 117 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new MulExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, MulOpType.Div);
 		}
 #line default
         break;
       case 22: // additive_expression -> multiplicative_expression
-#line 124 "..\..\parser.y"
+#line 124 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new AddExp(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 23: // additive_expression -> additive_expression, Plus, multiplicative_expression
-#line 128 "..\..\parser.y"
+#line 128 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new AddExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, AddOpType.Add);
 		}
 #line default
         break;
       case 24: // additive_expression -> additive_expression, Minus, multiplicative_expression
-#line 132 "..\..\parser.y"
+#line 132 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new AddExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, AddOpType.Sub);
 		}
 #line default
         break;
       case 25: // relational_expression -> additive_expression
-#line 139 "..\..\parser.y"
+#line 139 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new RelExp(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 26: // relational_expression -> relational_expression, LessThan, additive_expression
-#line 143 "..\..\parser.y"
+#line 143 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new RelExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, RelOpType.LessThan);
 		}
@@ -447,14 +447,14 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         break;
       case 27: // relational_expression -> relational_expression, GreaterThan, 
                //                          additive_expression
-#line 147 "..\..\parser.y"
+#line 147 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new RelExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, RelOpType.GreaterThan);
 		}
 #line default
         break;
       case 28: // relational_expression -> relational_expression, LessEqual, additive_expression
-#line 151 "..\..\parser.y"
+#line 151 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new RelExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, RelOpType.LessEqual);
 		}
@@ -462,231 +462,231 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         break;
       case 29: // relational_expression -> relational_expression, GreaterEqual, 
                //                          additive_expression
-#line 155 "..\..\parser.y"
+#line 155 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new RelExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, RelOpType.GreaterEqual);
 		}
 #line default
         break;
       case 30: // relational_expression -> relational_expression, Equals, additive_expression
-#line 159 "..\..\parser.y"
+#line 159 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new RelExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, RelOpType.Equals);
 		}
 #line default
         break;
       case 31: // relational_expression -> relational_expression, NotEquals, additive_expression
-#line 163 "..\..\parser.y"
+#line 163 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new RelExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, RelOpType.NotEquals);
 		}
 #line default
         break;
       case 32: // logical_expression -> relational_expression
-#line 170 "..\..\parser.y"
+#line 170 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new LogExp(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 33: // logical_expression -> logical_expression, And, relational_expression
-#line 174 "..\..\parser.y"
+#line 174 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new LogExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, LogOpType.And);
 		}
 #line default
         break;
       case 34: // logical_expression -> logical_expression, Or, relational_expression
-#line 178 "..\..\parser.y"
+#line 178 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new LogExp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node, LogOpType.Or);
 		}
 #line default
         break;
       case 35: // expression -> logical_expression
-#line 185 "..\..\parser.y"
+#line 185 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Exp(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 36: // expression -> logical_expression, Assign, expression
-#line 189 "..\..\parser.y"
+#line 189 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Exp(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 37: // declaration -> Int, Ident, Semicolon
-#line 198 "..\..\parser.y"
+#line 198 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Decl(LocationStack[LocationStack.Depth-3].StartLine, VarType.Int, ValueStack[ValueStack.Depth-2].val);
 		}
 #line default
         break;
       case 38: // declaration -> Double, Ident, Semicolon
-#line 202 "..\..\parser.y"
+#line 202 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Decl(LocationStack[LocationStack.Depth-3].StartLine, VarType.Double, ValueStack[ValueStack.Depth-2].val);
 		}
 #line default
         break;
       case 39: // declaration -> Bool, Ident, Semicolon
-#line 206 "..\..\parser.y"
+#line 206 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Decl(LocationStack[LocationStack.Depth-3].StartLine, VarType.Bool, ValueStack[ValueStack.Depth-2].val);
 		}
 #line default
         break;
       case 40: // statement -> block_statement
-#line 215 "..\..\parser.y"
+#line 215 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Stat(LocationStack[LocationStack.Depth-1].StartLine, StatType.Block, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 41: // statement -> expression, Semicolon
-#line 219 "..\..\parser.y"
+#line 219 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Stat(LocationStack[LocationStack.Depth-2].StartLine, StatType.Exp, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
       case 42: // statement -> selection_statement
-#line 223 "..\..\parser.y"
+#line 223 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Stat(LocationStack[LocationStack.Depth-1].StartLine, StatType.Selection, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 43: // statement -> While, OpenPar, expression, ClosePar, statement
-#line 227 "..\..\parser.y"
+#line 227 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Stat(LocationStack[LocationStack.Depth-5].StartLine, StatType.While, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 44: // statement -> Read, Ident, Semicolon
-#line 231 "..\..\parser.y"
+#line 231 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Stat(LocationStack[LocationStack.Depth-3].StartLine, StatType.Read, ValueStack[ValueStack.Depth-2].val);
 		}
 #line default
         break;
       case 45: // statement -> write_statement
-#line 235 "..\..\parser.y"
+#line 235 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Stat(LocationStack[LocationStack.Depth-1].StartLine, StatType.Write, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 46: // statement -> Return, Semicolon
-#line 239 "..\..\parser.y"
+#line 239 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new Stat(LocationStack[LocationStack.Depth-2].StartLine, StatType.Return);
 		}
 #line default
         break;
       case 47: // statement -> error, Semicolon
-#line 243 "..\..\parser.y"
+#line 243 "..\..\kompilator.y"
   {
 			Compiler.syntaxErrors.Add(new SyntaxError(LocationStack[LocationStack.Depth-2].StartLine, "Syntax error"));
 		}
 #line default
         break;
       case 48: // statement -> While, OpenPar, error, ClosePar, statement
-#line 247 "..\..\parser.y"
+#line 247 "..\..\kompilator.y"
   {
 			Compiler.syntaxErrors.Add(new SyntaxError(LocationStack[LocationStack.Depth-5].StartLine, "Syntax error"));
 		}
 #line default
         break;
       case 49: // block_statement -> OpenCurly, CloseCurly
-#line 254 "..\..\parser.y"
+#line 254 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new BlockStat(LocationStack[LocationStack.Depth-2].StartLine);
 		}
 #line default
         break;
       case 50: // block_statement -> OpenCurly, statement_list, CloseCurly
-#line 258 "..\..\parser.y"
+#line 258 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new BlockStat(LocationStack[LocationStack.Depth-3].StartLine, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
       case 51: // block_statement -> OpenCurly, error, CloseCurly
-#line 262 "..\..\parser.y"
+#line 262 "..\..\kompilator.y"
   {
 			Compiler.syntaxErrors.Add(new SyntaxError(LocationStack[LocationStack.Depth-3].StartLine, "Syntax error"));
 		}
 #line default
         break;
       case 52: // main_statement -> OpenCurly, CloseCurly
-#line 269 "..\..\parser.y"
+#line 269 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new MainStat(LocationStack[LocationStack.Depth-2].StartLine, MainStatType.Empty);
 		}
 #line default
         break;
       case 53: // main_statement -> OpenCurly, statement_list, CloseCurly
-#line 273 "..\..\parser.y"
+#line 273 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new MainStat(LocationStack[LocationStack.Depth-3].StartLine, MainStatType.Stat, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
       case 54: // main_statement -> OpenCurly, declaration_list, CloseCurly
-#line 277 "..\..\parser.y"
+#line 277 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new MainStat(LocationStack[LocationStack.Depth-3].StartLine, MainStatType.Decl, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
       case 55: // main_statement -> OpenCurly, declaration_list, statement_list, CloseCurly
-#line 281 "..\..\parser.y"
+#line 281 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new MainStat(LocationStack[LocationStack.Depth-4].StartLine, MainStatType.DeclStat, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
       case 56: // main_statement -> OpenCurly, error, CloseCurly
-#line 285 "..\..\parser.y"
+#line 285 "..\..\kompilator.y"
   {
 			Compiler.syntaxErrors.Add(new SyntaxError(LocationStack[LocationStack.Depth-3].StartLine, "Syntax error"));
 		}
 #line default
         break;
       case 57: // declaration_list -> declaration
-#line 292 "..\..\parser.y"
+#line 292 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new DeclList(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 58: // declaration_list -> declaration_list, declaration
-#line 296 "..\..\parser.y"
+#line 296 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new DeclList(LocationStack[LocationStack.Depth-2].StartLine, ValueStack[ValueStack.Depth-2].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 59: // statement_list -> statement
-#line 303 "..\..\parser.y"
+#line 303 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new StatList(LocationStack[LocationStack.Depth-1].StartLine, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 60: // statement_list -> statement_list, statement
-#line 307 "..\..\parser.y"
+#line 307 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new StatList(LocationStack[LocationStack.Depth-2].StartLine, ValueStack[ValueStack.Depth-2].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 61: // selection_statement -> If, OpenPar, expression, ClosePar, statement
-#line 314 "..\..\parser.y"
+#line 314 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new SelectionStat(LocationStack[LocationStack.Depth-5].StartLine, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node);
 		}
@@ -694,21 +694,21 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         break;
       case 62: // selection_statement -> If, OpenPar, expression, ClosePar, statement, Else, 
                //                        statement
-#line 318 "..\..\parser.y"
+#line 318 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new SelectionStat(LocationStack[LocationStack.Depth-7].StartLine, ValueStack[ValueStack.Depth-5].node, ValueStack[ValueStack.Depth-3].node, ValueStack[ValueStack.Depth-1].node);
 		}
 #line default
         break;
       case 63: // write_statement -> Write, expression, Semicolon
-#line 325 "..\..\parser.y"
+#line 325 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new WriteStat(LocationStack[LocationStack.Depth-3].StartLine, WriteStatType.Exp, ValueStack[ValueStack.Depth-2].node);
 		}
 #line default
         break;
       case 64: // write_statement -> Write, String, Semicolon
-#line 329 "..\..\parser.y"
+#line 329 "..\..\kompilator.y"
   {
 			CurrentSemanticValue.node = new WriteStat(LocationStack[LocationStack.Depth-3].StartLine, WriteStatType.String, ValueStack[ValueStack.Depth-2].val);
 		}
@@ -728,7 +728,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 335 "..\..\parser.y"
+#line 335 "..\..\kompilator.y"
 
 public Parser(Scanner scanner) : base(scanner) { }
 #line default
