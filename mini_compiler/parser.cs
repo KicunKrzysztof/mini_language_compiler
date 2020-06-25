@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-F5UB616
-// DateTime: 6/24/2020 6:50:23 PM
+// DateTime: 6/25/2020 2:11:23 AM
 // UserName: Krzys
-// Input file <..\..\parser.y - 6/24/2020 5:26:44 PM>
+// Input file <..\..\parser.y - 6/25/2020 2:05:05 AM>
 
 // options: lines gplex
 
@@ -621,7 +621,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
       case 53: // main_statement -> error
 #line 273 "..\..\parser.y"
   {
-			Compiler.syntaxErrors.Add(new SyntaxError(LocationStack[LocationStack.Depth-1].StartLine, "error"));
+			Compiler.syntaxErrors.Add(new SyntaxError(LocationStack[LocationStack.Depth-1].StartLine, "Syntax error"));
 		}
 #line default
         break;

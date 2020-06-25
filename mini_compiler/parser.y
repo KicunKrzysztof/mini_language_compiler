@@ -271,7 +271,7 @@ main_statement
 		}
 	| error
 		{
-			Compiler.syntaxErrors.Add(new SyntaxError(@1.StartLine, "error"));
+			Compiler.syntaxErrors.Add(new SyntaxError(@1.StartLine, "Syntax error"));
 		}
 	;
 

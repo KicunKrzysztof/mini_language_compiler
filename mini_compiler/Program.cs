@@ -6,14 +6,14 @@ using GardensPoint;
 public class Compiler
 {
     public static List<string> source;
+    private static StreamWriter sw;
     public static SyntaxTree tree;
     public static Dictionary<string, Variable> symbolArray = new Dictionary<string, Variable>();
-    public static List<SemanticError> SemanticErrors = new List<SemanticError>();
+    public static List<SemanticError> semanticErrors = new List<SemanticError>();
     public static List<SyntaxError> syntaxErrors = new List<SyntaxError>();
-    private static StreamWriter sw;
+    public static List<LexError> lexErrors = new List<LexError>();
     private static int varNumGenerator = 0;
     private static int labelNumGenerator = 0;
-
     public static int Main(string[] args)
     {
         string file;
@@ -27,7 +27,7 @@ public class Compiler
             var sr = new StreamReader(file);
             string str = sr.ReadToEnd();
             sr.Close();
-            Compiler.source = new System.Collections.Generic.List<string>(str.Split(new string[] { "\r\n" }, System.StringSplitOptions.None));
+            Compiler.source = new List<string>(str.Split(new string[] { "\r\n" }, StringSplitOptions.None));
             source = new FileStream(file, FileMode.Open);
         }
         catch (Exception e)
@@ -40,23 +40,20 @@ public class Compiler
         Console.WriteLine();
         sw = new StreamWriter(file + ".il");
         //-----------------------------------------------------lex and syntax analysis:
-        bool parseRes = parser.Parse();
-        if (!parseRes || syntaxErrors.Count != 0)
+        if (!parser.Parse() || syntaxErrors.Count != 0 || lexErrors.Count != 0)
         {
+            foreach (LexError err in lexErrors)
+                Console.WriteLine($"{err._description}, occurs in line: {err._lineNum}");
             foreach (SyntaxError err in syntaxErrors)
-            {
-                Console.WriteLine($"{err._description}, occurs in line number: {err._lineNum}");
-            }
+                Console.WriteLine($"{err._description}, occurs in line: {err._lineNum}");
             return 1;
         }
         //-----------------------------------------------------semantic analysis:
         tree.SemanticAnalysis();
-        if (SemanticErrors.Count > 0)
+        if (semanticErrors.Count > 0)
         {
-            foreach (SemanticError err in SemanticErrors)
-            {
-                Console.WriteLine($"{err._description}, occurs in line number: {err._lineNum}");
-            }
+            foreach (SemanticError err in semanticErrors)
+                Console.WriteLine($"{err._description}, occurs in line: {err._lineNum}");
             return 1;
         }
         //-----------------------------------------------------code generating:
@@ -74,18 +71,10 @@ public class Compiler
         if (instr != "")
             sw.WriteLine(instr);
     }
-    public static int GenVarNum()
-    {
-        return varNumGenerator++;
-    }
-    public static string GenLabel()
-    {
-        return $"L{labelNumGenerator++}";
-    }
-
+    public static int GenVarNum() { return varNumGenerator++; }
+    public static string GenLabel() { return $"L{labelNumGenerator++}"; }
     private static void GenProlog()
     {
-        //EmitCode(".assembly extern System.Private.CoreLib {}");
         EmitCode(".assembly extern mscorlib { }");
         EmitCode(".assembly mini_compiler { }");
         EmitCode(".method static void main()");
@@ -96,7 +85,6 @@ public class Compiler
         EmitCode(".maxstack  64");
         EmitCode("//------------------------- prolog");
     }
-
     private static void GenEpilog()
     {
         EmitCode("//------------------------- epilog:");
@@ -116,9 +104,8 @@ public class Compiler
 public abstract class Variable
 {
     public VariableType _type;
-    public int _cilNumber;
+    public int _cilNumber, _doNotPutOnStack;
     public string _name;
-    public int _doNotPutOnStack;
     public Variable(VariableType type, string name)
     {
         _type = type;
@@ -131,28 +118,19 @@ public class Bool : Variable
 {
     public bool _val;
     public Bool(string name) : base(VariableType.Bool, name) { }
-    public override VariableType GetVarType()
-    {
-        return VariableType.Bool;
-    }
+    public override VariableType GetVarType() { return VariableType.Bool; }
 }
 public class Int : Variable
 {
     public int _val;
     public Int(string name) : base(VariableType.Int, name) { }
-    public override VariableType GetVarType()
-    {
-        return VariableType.Int;
-    }
+    public override VariableType GetVarType() { return VariableType.Int; }
 }
 public class Double : Variable
 {
     public double _val;
     public Double(string name) : base(VariableType.Double, name) { }
-    public override VariableType GetVarType()
-    {
-        return VariableType.Double;
-    }
+    public override VariableType GetVarType() { return VariableType.Double; }
 }
 #endregion
 #region errors
@@ -171,6 +149,16 @@ public class SyntaxError
     public int _lineNum;
     public string _description;
     public SyntaxError(int lineNum, string description)
+    {
+        _lineNum = lineNum;
+        _description = description;
+    }
+}
+public class LexError
+{
+    public int _lineNum;
+    public string _description;
+    public LexError(int lineNum, string description)
     {
         _lineNum = lineNum;
         _description = description;
@@ -255,62 +243,49 @@ public enum WriteStatType
 public abstract class SyntaxTree
 {
     public int _line = -1;
-    public List<SyntaxTree> children = new List<SyntaxTree>();
-    public List<VariableType> semChildren = new List<VariableType>();
-    public SyntaxTree(int line)
-    {
-        _line = line;
-    }
+    public List<SyntaxTree> _children = new List<SyntaxTree>();
+    public List<VariableType> _semChildren = new List<VariableType>();
+    public SyntaxTree(int line) { _line = line; }
     public virtual void EmitCode()
     {
-        for (int i = 0; i < children.Count; i++)
-        {
-            children[i].EmitCode();
-        }
+        for (int i = 0; i < _children.Count; i++)
+            _children[i].EmitCode();
     }
     public virtual VariableType SemanticAnalysis()
     {
-        for (int i = 0; i < children.Count; i++)
-        {
-            semChildren.Add(children[i].SemanticAnalysis());
-        }
-        return semChildren.Count > 0 ? semChildren[0] : VariableType.NoVariable;
+        for (int i = 0; i < _children.Count; i++)
+            _semChildren.Add(_children[i].SemanticAnalysis());
+        return _semChildren.Count > 0 ? _semChildren[0] : VariableType.NoVariable;
     }
     public virtual bool LValue()
     {
-        if (children.Count != 1)
+        if (_children.Count != 1)
             return false;
         else
-            return children[0].LValue();
+            return _children[0].LValue();
     }
     public bool PassSemError()
     {
-        for (int i = 0; i < children.Count; i++)
+        for (int i = 0; i < _children.Count; i++)
         {
-            if (semChildren[i] == VariableType.SemError)
+            if (_semChildren[i] == VariableType.SemError)
                 return true;
         }
         return false;
     }
     protected void AddCast(int i)
     {
-        SyntaxTree node = new UnaryExp(_line, new UnaryOp(_line, UnaryOpType.Cast2Double), children[i]);
-        node.semChildren = new List<VariableType> { VariableType.NoVariable, VariableType.Int };
-        children[i] = node;
+        SyntaxTree node = new UnaryExp(_line, new UnaryOp(_line, UnaryOpType.Cast2Double), _children[i]);
+        node._semChildren = new List<VariableType> { VariableType.NoVariable, VariableType.Int };
+        _children[i] = node;
     }
-    public virtual string GetIdent()
-    {
-        return children[0].GetIdent();
-    }
+    public virtual string GetIdent() { return _children[0].GetIdent(); }
 }
 #endregion
 #region Expressions
 public class Program : SyntaxTree
 {
-    public Program(int lineNum, SyntaxTree child) : base(lineNum)
-    {
-        children.Add(child);
-    }
+    public Program(int lineNum, SyntaxTree child) : base(lineNum) { _children.Add(child); }
     public override void EmitCode()
     {
         base.EmitCode();
@@ -321,18 +296,9 @@ public class PrimaryExp : SyntaxTree
 {
     public PrimaryExpType _type;
     public string _val = "";
-    public PrimaryExp(int lineNum, PrimaryExpType type) : base(lineNum)
-    {
-        _type = type;
-    }
-    public PrimaryExp(int lineNum, PrimaryExpType type, string val) : this(lineNum, type)
-    {
-        _val = val;
-    }
-    public PrimaryExp(int lineNum, PrimaryExpType type, SyntaxTree child) : this(lineNum, type)
-    {
-        children.Add(child);
-    }
+    public PrimaryExp(int lineNum, PrimaryExpType type) : base(lineNum) { _type = type; }
+    public PrimaryExp(int lineNum, PrimaryExpType type, string val) : this(lineNum, type) { _val = val; }
+    public PrimaryExp(int lineNum, PrimaryExpType type, SyntaxTree child) : this(lineNum, type) { _children.Add(child); }
     public override void EmitCode()
     {
         base.EmitCode();
@@ -378,7 +344,7 @@ public class PrimaryExp : SyntaxTree
             case PrimaryExpType.Ident:
                 if (!Compiler.symbolArray.ContainsKey(_val))
                 {
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: not declared variable"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: undeclared variable"));
                     return VariableType.SemError;
                 }
                 else
@@ -394,7 +360,7 @@ public class PrimaryExp : SyntaxTree
             case PrimaryExpType.IntNumber:
                 return VariableType.Int;
             case PrimaryExpType.Exp:
-                return semChildren[0];
+                return _semChildren[0];
             default:
                 return VariableType.NoVariable;
         }
@@ -406,23 +372,20 @@ public class PrimaryExp : SyntaxTree
         else
             return false;
     }
-    public override string GetIdent()
-    {
-        return _val;
-    }
+    public override string GetIdent() { return _val; }
 }
 public class UnaryExp : SyntaxTree
 {
     public UnaryExpType _type;
     public UnaryExp(int lineNum, SyntaxTree child) : base(lineNum)
     {
-        children.Add(child);
+        _children.Add(child);
         _type = UnaryExpType.Empty;
     }
     public UnaryExp(int lineNum, SyntaxTree childOp, SyntaxTree childExp) : base(lineNum)
     {
-        children.Add(childOp);
-        children.Add(childExp);
+        _children.Add(childOp);
+        _children.Add(childExp);
         _type = UnaryExpType.UnaryExp;
     }
     public override void EmitCode()
@@ -431,7 +394,7 @@ public class UnaryExp : SyntaxTree
         string code = "";
         if (_type == UnaryExpType.Empty)
             return;
-        switch (((UnaryOp)children[0])._type)
+        switch (((UnaryOp)_children[0])._type)
         {
             case UnaryOpType.Minus:
                 code = "neg";
@@ -460,38 +423,38 @@ public class UnaryExp : SyntaxTree
         switch (_type)
         {
             case UnaryExpType.Empty:
-                return semChildren[0];
+                return _semChildren[0];
             case UnaryExpType.UnaryExp:
-                switch (((UnaryOp)children[0])._type)
+                switch (((UnaryOp)_children[0])._type)
                 {
                     case UnaryOpType.Minus:
-                        if (semChildren[1] == VariableType.Int || semChildren[1] == VariableType.Double)
+                        if (_semChildren[1] == VariableType.Int || _semChildren[1] == VariableType.Double)
                         {
-                            return semChildren[1];
+                            return _semChildren[1];
                         }
                         else
                         {
-                            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: unary minus operand must has type int or double"));
+                            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: unary minus operand must has type int or double"));
                             return VariableType.SemError;
                         }
                     case UnaryOpType.Not:
-                        if (semChildren[1] == VariableType.Bool)
+                        if (_semChildren[1] == VariableType.Bool)
                         {
                             return VariableType.Bool;
                         }
                         else
                         {
-                            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: logic not operand must has type bool"));
+                            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: logic not operand must has type bool"));
                             return VariableType.SemError;
                         }
                     case UnaryOpType.BitwiseNot:
-                        if (semChildren[1] == VariableType.Int)
+                        if (_semChildren[1] == VariableType.Int)
                         {
                             return VariableType.Int;
                         }
                         else
                         {
-                            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: bitwise not operand must has type int"));
+                            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: bitwise not operand must has type int"));
                             return VariableType.SemError;
                         }
                     case UnaryOpType.Cast2Double:
@@ -509,45 +472,35 @@ public class UnaryExp : SyntaxTree
 public class UnaryOp : SyntaxTree
 {
     public UnaryOpType _type;
-    public UnaryOp(int lineNum, UnaryOpType type) : base(lineNum)
-    {
-        _type = type;
-    }
-    public override void EmitCode()
-    {
-        base.EmitCode();
-    }
+    public UnaryOp(int lineNum, UnaryOpType type) : base(lineNum) { _type = type; }
+    public override void EmitCode() { base.EmitCode(); }
 }
 public class BitwiseExp : SyntaxTree
 {
     public BitwiseOpType _type;
     public BitwiseExp(int lineNum, SyntaxTree childUnExp) : base(lineNum)
     {
-        children.Add(childUnExp);
+        _children.Add(childUnExp);
         _type = BitwiseOpType.Empty;
     }
     public BitwiseExp(int lineNum, SyntaxTree childBitExp, SyntaxTree childUnExp, BitwiseOpType type) : base(lineNum)
     {
-        children.Add(childBitExp);
-        children.Add(childUnExp);
+        _children.Add(childBitExp);
+        _children.Add(childUnExp);
         _type = type;
     }
     public override void EmitCode()
     {
         base.EmitCode();
-        string code = "";
         switch (_type)
         {
-            case BitwiseOpType.Empty:
-                break;
             case BitwiseOpType.Or:
-                code = "or";
+                Compiler.EmitCode("or");
                 break;
             case BitwiseOpType.And:
-                code = "and";
+                Compiler.EmitCode("and");
                 break;
         }
-        Compiler.EmitCode(code);
     }
 
     public override VariableType SemanticAnalysis()
@@ -557,15 +510,15 @@ public class BitwiseExp : SyntaxTree
             return VariableType.SemError;
         if (_type == BitwiseOpType.Empty)
         {
-            return semChildren[0];
+            return _semChildren[0];
         }
-        else if (semChildren[0] == VariableType.Int && semChildren[1] == VariableType.Int)
+        else if (_semChildren[0] == VariableType.Int && _semChildren[1] == VariableType.Int)
         {
             return VariableType.Int;
         }
         else
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: bitwise and/or operands must have type int"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: bitwise and/or operands must have type int"));
             return VariableType.SemError;
         }
     }
@@ -575,58 +528,56 @@ public class MulExp : SyntaxTree
     public MulOpType _type;
     public MulExp(int lineNum, SyntaxTree childBitExp) : base(lineNum)
     {
-        children.Add(childBitExp);
+        _children.Add(childBitExp);
         _type = MulOpType.Empty;
     }
     public MulExp(int lineNum, SyntaxTree childMulExp, SyntaxTree childBitExp, MulOpType type) : base(lineNum)
     {
-        children.Add(childMulExp);
-        children.Add(childBitExp);
+        _children.Add(childMulExp);
+        _children.Add(childBitExp);
         _type = type;
     }
     public override void EmitCode()
     {
         base.EmitCode();
-        string code = "";
         switch (_type)
         {
-            case MulOpType.Empty:
-                break;
             case MulOpType.Mul:
-                code = "mul";
+                Compiler.EmitCode("mul");
                 break;
             case MulOpType.Div:
-                code = "div";
+                Compiler.EmitCode("div");
                 break;
         }
-        Compiler.EmitCode(code);
     }
 
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
         if (PassSemError())
+        {
             return VariableType.SemError;
+        }
         if (_type == MulOpType.Empty)
         {
-            return semChildren[0];
+            return _semChildren[0];
         }
-        else if ((semChildren[0] == VariableType.Int || semChildren[0] == VariableType.Double)
-            && (semChildren[1] == VariableType.Int || semChildren[1] == VariableType.Double))
+        else if ((_semChildren[0] == VariableType.Int || _semChildren[0] == VariableType.Double)
+            && (_semChildren[1] == VariableType.Int || _semChildren[1] == VariableType.Double))
         {
-            if (semChildren[0] == VariableType.Int && semChildren[1] == VariableType.Int)
+            if (_semChildren[0] == VariableType.Int && _semChildren[1] == VariableType.Int)
             {
                 return VariableType.Int;
             }
             else
             {
-                AddCast(semChildren[0] == VariableType.Int ? 0 : 1);
+                AddCast(_semChildren[0] == VariableType.Int ? 0 : 1);
                 return VariableType.Double;
             }
         }
         else
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: multiplicative operands must have type int or double"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: multiplicative operands must have type int or double"));
             return VariableType.SemError;
         }
     }
@@ -636,57 +587,55 @@ public class AddExp : SyntaxTree
     public AddOpType _type;
     public AddExp(int lineNum, SyntaxTree childMulExp) : base(lineNum)
     {
-        children.Add(childMulExp);
+        _children.Add(childMulExp);
         _type = AddOpType.Empty;
     }
     public AddExp(int lineNum, SyntaxTree childAddExp, SyntaxTree childMulExp, AddOpType type) : base(lineNum)
     {
-        children.Add(childAddExp);
-        children.Add(childMulExp);
+        _children.Add(childAddExp);
+        _children.Add(childMulExp);
         _type = type;
     }
     public override void EmitCode()
     {
         base.EmitCode();
-        string code = "";
         switch (_type)
         {
-            case AddOpType.Empty:
-                break;
             case AddOpType.Add:
-                code = "add";
+                Compiler.EmitCode("add");
                 break;
             case AddOpType.Sub:
-                code = "sub";
+                Compiler.EmitCode("sub");
                 break;
         }
-        Compiler.EmitCode(code);
     }
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
         if (PassSemError())
+        {
             return VariableType.SemError;
+        }
         if (_type == AddOpType.Empty)
         {
-            return semChildren[0];
+            return _semChildren[0];
         }
-        else if ((semChildren[0] == VariableType.Int || semChildren[0] == VariableType.Double)
-            && (semChildren[1] == VariableType.Int || semChildren[1] == VariableType.Double))
+        else if ((_semChildren[0] == VariableType.Int || _semChildren[0] == VariableType.Double)
+            && (_semChildren[1] == VariableType.Int || _semChildren[1] == VariableType.Double))
         {
-            if (semChildren[0] == VariableType.Int && semChildren[1] == VariableType.Int)
+            if (_semChildren[0] == VariableType.Int && _semChildren[1] == VariableType.Int)
             {
                 return VariableType.Int;
             }
             else
             {
-                AddCast(semChildren[0] == VariableType.Int ? 0 : 1);
+                AddCast(_semChildren[0] == VariableType.Int ? 0 : 1);
                 return VariableType.Double;
             }
         }
         else
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: additives operands must have type int or double"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: additives operands must have type int or double"));
             return VariableType.SemError;
         }
     }
@@ -696,13 +645,13 @@ public class RelExp : SyntaxTree
     public RelOpType _type;
     public RelExp(int lineNum, SyntaxTree childAddExp) : base(lineNum)
     {
-        children.Add(childAddExp);
+        _children.Add(childAddExp);
         _type = RelOpType.Empty;
     }
     public RelExp(int lineNum, SyntaxTree childRelExp, SyntaxTree childAddExp, RelOpType type) : base(lineNum)
     {
-        children.Add(childRelExp);
-        children.Add(childAddExp);
+        _children.Add(childRelExp);
+        _children.Add(childAddExp);
         _type = type;
     }
     public override void EmitCode()
@@ -711,8 +660,6 @@ public class RelExp : SyntaxTree
         string code = "";
         switch (_type)
         {
-            case RelOpType.Empty:
-                break;
             case RelOpType.LessThan:
                 code = "clt";
                 break;
@@ -738,18 +685,22 @@ public class RelExp : SyntaxTree
     {
         base.SemanticAnalysis();
         if (PassSemError())
-            return VariableType.SemError;
-        if (_type == RelOpType.Empty)
-            return semChildren[0];
-        if ((semChildren[0] == VariableType.Double || semChildren[0] == VariableType.Int)
-                    && (semChildren[1] == VariableType.Double || semChildren[1] == VariableType.Int))
         {
-            if (semChildren[0] != semChildren[1])
-                AddCast(semChildren[0] == VariableType.Int ? 0 : 1);
+            return VariableType.SemError;
+        }
+        if (_type == RelOpType.Empty)
+        {
+            return _semChildren[0];
+        }
+        if ((_semChildren[0] == VariableType.Double || _semChildren[0] == VariableType.Int)
+                    && (_semChildren[1] == VariableType.Double || _semChildren[1] == VariableType.Int))
+        {
+            if (_semChildren[0] != _semChildren[1])
+                AddCast(_semChildren[0] == VariableType.Int ? 0 : 1);
             return VariableType.Bool;
         }
-        else if ((_type == RelOpType.Equals || _type == RelOpType.NotEquals) 
-            && semChildren[0] == VariableType.Bool && semChildren[1] == VariableType.Bool)
+        else if ((_type == RelOpType.Equals || _type == RelOpType.NotEquals)
+            && _semChildren[0] == VariableType.Bool && _semChildren[1] == VariableType.Bool)
         {
             return VariableType.Bool;
         }
@@ -758,22 +709,22 @@ public class RelExp : SyntaxTree
             switch (_type)
             {
                 case RelOpType.LessThan:
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: LessThan operands must have type int or double"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: LessThan operands must have type int or double"));
                     break;
                 case RelOpType.GreaterThan:
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: GreaterThan operands must have type int or double"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: GreaterThan operands must have type int or double"));
                     break;
                 case RelOpType.LessEqual:
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: LessEqual operands must have type int or double"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: LessEqual operands must have type int or double"));
                     break;
                 case RelOpType.GreaterEqual:
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: GreaterEqual operands must have type int or double"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: GreaterEqual operands must have type int or double"));
                     break;
                 case RelOpType.Equals:
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: Equals operands must have type int, double or bool"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: Equals operands must have type int, double or bool"));
                     break;
                 case RelOpType.NotEquals:
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: NotEquals operands must have type int, double or bool"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: NotEquals operands must have type int, double or bool"));
                     break;
             }
         }
@@ -786,13 +737,13 @@ public class LogExp : SyntaxTree
     public string _label1 = "", _label2 = "";
     public LogExp(int lineNum, SyntaxTree childRelExp) : base(lineNum)
     {
-        children.Add(childRelExp);
+        _children.Add(childRelExp);
         _type = LogOpType.Empty;
     }
     public LogExp(int lineNum, SyntaxTree childLogExp, SyntaxTree childRelExp, LogOpType type) : base(lineNum)
     {
-        children.Add(childLogExp);
-        children.Add(childRelExp);
+        _children.Add(childLogExp);
+        _children.Add(childRelExp);
         _type = type;
     }
     public override void EmitCode()
@@ -800,34 +751,34 @@ public class LogExp : SyntaxTree
         switch (_type)
         {
             case LogOpType.Empty:
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 break;
             case LogOpType.And:
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 _label1 = Compiler.GenLabel();
                 _label2 = Compiler.GenLabel();
-                if (((LogExp)children[0])._label1 != "")
+                if (((LogExp)_children[0])._label1 != "")
                 {
-                    int leftVal = ((LogExp)children[0])._type == LogOpType.And ? 0 : 1;
-                    Compiler.EmitCode($"{((LogExp)children[0])._label1}: ldc.i4.{leftVal}");
-                    Compiler.EmitCode($"{((LogExp)children[0])._label2}:");
+                    int leftVal = ((LogExp)_children[0])._type == LogOpType.And ? 0 : 1;
+                    Compiler.EmitCode($"{((LogExp)_children[0])._label1}: ldc.i4.{leftVal}");
+                    Compiler.EmitCode($"{((LogExp)_children[0])._label2}:");
                 }
                 Compiler.EmitCode($"brfalse {_label1}");
-                children[1].EmitCode();
+                _children[1].EmitCode();
                 Compiler.EmitCode($"br {_label2}");
                 break;
             case LogOpType.Or:
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 _label1 = Compiler.GenLabel();
                 _label2 = Compiler.GenLabel();
-                if (((LogExp)children[0])._label1 != "")
+                if (((LogExp)_children[0])._label1 != "")
                 {
-                    int leftVal = ((LogExp)children[0])._type == LogOpType.And ? 0 : 1;
-                    Compiler.EmitCode($"{((LogExp)children[0])._label1}: ldc.i4.{leftVal}");
-                    Compiler.EmitCode($"{((LogExp)children[0])._label2}:");
+                    int leftVal = ((LogExp)_children[0])._type == LogOpType.And ? 0 : 1;
+                    Compiler.EmitCode($"{((LogExp)_children[0])._label1}: ldc.i4.{leftVal}");
+                    Compiler.EmitCode($"{((LogExp)_children[0])._label2}:");
                 }
                 Compiler.EmitCode($"brtrue {_label1}");
-                children[1].EmitCode();
+                _children[1].EmitCode();
                 Compiler.EmitCode($"br {_label2}");
                 break;
         }
@@ -836,18 +787,20 @@ public class LogExp : SyntaxTree
     {
         base.SemanticAnalysis();
         if (PassSemError())
+        {
             return VariableType.SemError;
+        }
         if (_type == LogOpType.Empty)
         {
-            return semChildren[0];
+            return _semChildren[0];
         }
-        else if (semChildren[0] == VariableType.Bool && semChildren[1] == VariableType.Bool)
+        else if (_semChildren[0] == VariableType.Bool && _semChildren[1] == VariableType.Bool)
         {
             return VariableType.Bool;
         }
         else
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: logic and/or operands must have type bool"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: logic and/or operands must have type bool"));
             return VariableType.SemError;
         }
     }
@@ -857,13 +810,13 @@ public class Exp : SyntaxTree
     public ExpOpType _type;
     public Exp(int lineNum, SyntaxTree childLogExp) : base(lineNum)
     {
-        children.Add(childLogExp);
+        _children.Add(childLogExp);
         _type = ExpOpType.Empty;
     }
     public Exp(int lineNum, SyntaxTree childLogExp, SyntaxTree childExp) : base(lineNum)
     {
-        children.Add(childLogExp);
-        children.Add(childExp);
+        _children.Add(childLogExp);
+        _children.Add(childExp);
         _type = ExpOpType.Assign;
     }
     public override void EmitCode()
@@ -876,11 +829,11 @@ public class Exp : SyntaxTree
         switch (_type)
         {
             case ExpOpType.Empty:
-                if (((LogExp)children[0])._label1 != "")
+                if (((LogExp)_children[0])._label1 != "")
                 {
-                    int leftVal = ((LogExp)children[0])._type == LogOpType.And ? 0 : 1;
-                    Compiler.EmitCode($"{((LogExp)children[0])._label1}: ldc.i4.{leftVal}");
-                    Compiler.EmitCode($"{((LogExp)children[0])._label2}:");
+                    int leftVal = ((LogExp)_children[0])._type == LogOpType.And ? 0 : 1;
+                    Compiler.EmitCode($"{((LogExp)_children[0])._label1}: ldc.i4.{leftVal}");
+                    Compiler.EmitCode($"{((LogExp)_children[0])._label2}:");
                 }
                 break;
             case ExpOpType.Assign:
@@ -896,56 +849,60 @@ public class Exp : SyntaxTree
             return VariableType.SemError;
         if (_type == ExpOpType.Empty)
         {
-            return semChildren[0];
+            return _semChildren[0];
         }
-        else if (children[0].LValue())
+        else if (_children[0].LValue())
         {
-            if (semChildren[0] == VariableType.Double)
+            if (_semChildren[0] == VariableType.Double)
             {
-                if (semChildren[1] == VariableType.Double)
+                if (_semChildren[1] == VariableType.Double)
                 {
                     return VariableType.Double;
                 }
-                else if (semChildren[1] == VariableType.Int)
+                else if (_semChildren[1] == VariableType.Int)
                 {
                     AddCast(1);
                     return VariableType.Double;
                 }
                 else
                 {
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type int"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type int"));
                     return VariableType.SemError;
                 }
             }
-            else if (semChildren[0] == VariableType.Int)
+            else if (_semChildren[0] == VariableType.Int)
             {
-                if (semChildren[1] == VariableType.Int)
+                if (_semChildren[1] == VariableType.Int)
+                {
                     return VariableType.Int;
+                }
                 else
                 {
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type int"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type int"));
                     return VariableType.SemError;
                 }
             }
-            else if (semChildren[0] == VariableType.Bool)
+            else if (_semChildren[0] == VariableType.Bool)
             {
-                if (semChildren[1] == VariableType.Bool)
+                if (_semChildren[1] == VariableType.Bool)
+                {
                     return VariableType.Bool;
+                }
                 else
                 {
-                    Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type bool"));
+                    Compiler.semanticErrors.Add(new SemanticError(_line, "Error: assign right operand must be type bool"));
                     return VariableType.SemError;
                 }
             }
             else
             {
-                Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: non defined semantic error"));
+                Compiler.semanticErrors.Add(new SemanticError(_line, "Error: non defined semantic error"));
                 return VariableType.SemError;
             }
         }
         else
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: assign left operand must be identifier"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: assign left operand must be identifier"));
             return VariableType.SemError;
         }
     }
@@ -964,22 +921,20 @@ public class Decl : SyntaxTree
     public override void EmitCode()
     {
         base.EmitCode();
-        string code = "";
         int varNum = Compiler.GenVarNum();
         Compiler.symbolArray[_val]._cilNumber = varNum;
         switch (_type)
         {
             case VarType.Int:
-                code = $"[{varNum}] int32 _{_val}";
+                Compiler.EmitCode($"[{varNum}] int32 _{_val}");
                 break;
             case VarType.Double:
-                code = $"[{varNum}] float64 _{_val}";
+                Compiler.EmitCode($"[{varNum}] float64 _{_val}");
                 break;
             case VarType.Bool:
-                code = $"[{varNum}] bool _{_val}";
+                Compiler.EmitCode($"[{varNum}] bool _{_val}");
                 break;
         }
-        Compiler.EmitCode(code);
     }
 
     public override VariableType SemanticAnalysis()
@@ -987,7 +942,7 @@ public class Decl : SyntaxTree
         base.SemanticAnalysis();
         if (Compiler.symbolArray.ContainsKey(_val))
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: variable already declared"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: variable already declared"));
             return VariableType.SemError;
         }
         else
@@ -1014,23 +969,14 @@ public class Stat : SyntaxTree
     public StatType _type;
     public string _ident = "";
     private string _label1, _label2;
-    public Stat(int lineNum, StatType type) : base(lineNum)
+    public Stat(int lineNum, StatType type) : base(lineNum) { _type = type; }
+    public Stat(int lineNum, StatType type, SyntaxTree _childrentat) : this(lineNum, type) { _children.Add(_childrentat); }
+    public Stat(int lineNum, StatType type, SyntaxTree childExp, SyntaxTree _childrentat) : this(lineNum, type)
     {
-        _type = type;
+        _children.Add(childExp);
+        _children.Add(_childrentat);
     }
-    public Stat(int lineNum, StatType type, SyntaxTree childrentat) : this(lineNum, type)
-    {
-        children.Add(childrentat);
-    }
-    public Stat(int lineNum, StatType type, SyntaxTree childExp, SyntaxTree childrentat) : this(lineNum, type)
-    {
-        children.Add(childExp);
-        children.Add(childrentat);
-    }
-    public Stat(int lineNum, StatType type, string ident) : this(lineNum, type)
-    {
-        _ident = ident;
-    }
+    public Stat(int lineNum, StatType type, string ident) : this(lineNum, type) { _ident = ident; }
     public override void EmitCode()
     {
         switch (_type)
@@ -1044,9 +990,9 @@ public class Stat : SyntaxTree
                 _label2 = Compiler.GenLabel();
                 Compiler.EmitCode($"br {_label1}");
                 Compiler.EmitCode($"{_label2}:");
-                children[1].EmitCode();
+                _children[1].EmitCode();
                 Compiler.EmitCode($"{_label1}:");
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 Compiler.EmitCode($"brtrue {_label2}");
                 break;
             case StatType.Read:
@@ -1081,12 +1027,12 @@ public class Stat : SyntaxTree
             return VariableType.SemError;
         if (_type == StatType.Read && !Compiler.symbolArray.ContainsKey(_ident))
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: identifier not declared"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: undeclared variable"));
             return VariableType.SemError;
         }
-        else if (_type == StatType.While && semChildren[0] != VariableType.Bool)
+        else if (_type == StatType.While && _semChildren[0] != VariableType.Bool)
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: while term must be of type bool"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: while term must be of type bool"));
             return VariableType.SemError;
         }
         return VariableType.NoVariable;
@@ -1095,37 +1041,24 @@ public class Stat : SyntaxTree
 public class BlockStat : SyntaxTree
 {
     public BlockStatType _type;
-    public BlockStat(int lineNum) : base(lineNum)
-    {
-        _type = BlockStatType.Empty;
-    }
-    public BlockStat(int lineNum, SyntaxTree childrentatList) : base(lineNum)
+    public BlockStat(int lineNum) : base(lineNum) { _type = BlockStatType.Empty; }
+    public BlockStat(int lineNum, SyntaxTree _childrentatList) : base(lineNum)
     {
         _type = BlockStatType.StatList;
-        children.Add(childrentatList);
+        _children.Add(_childrentatList);
     }
-
-    public override void EmitCode()
-    {
-        base.EmitCode();
-    }
+    public override void EmitCode() { base.EmitCode(); }
 }
 public class MainStat : SyntaxTree
 {
     public string _val;
     public MainStatType _type;
-    public MainStat(int lineNum, MainStatType type) : base(lineNum)
+    public MainStat(int lineNum, MainStatType type) : base(lineNum) { _type = type; }
+    public MainStat(int lineNum, MainStatType type, SyntaxTree child) : this(lineNum, type) { _children.Add(child); }
+    public MainStat(int lineNum, MainStatType type, SyntaxTree childDecl, SyntaxTree _childrentat) : this(lineNum, type)
     {
-        _type = type;
-    }
-    public MainStat(int lineNum, MainStatType type, SyntaxTree child) : this(lineNum, type)
-    {
-        children.Add(child);
-    }
-    public MainStat(int lineNum, MainStatType type, SyntaxTree childDecl, SyntaxTree childrentat) : this(lineNum, type)
-    {
-        children.Add(childDecl);
-        children.Add(childrentat);
+        _children.Add(childDecl);
+        _children.Add(_childrentat);
     }
     public override void EmitCode()
     {
@@ -1135,19 +1068,18 @@ public class MainStat : SyntaxTree
                 Compiler.EmitCode("nop");
                 break;
             case MainStatType.Stat:
-                //code = "nop //statement TODO?";
                 base.EmitCode();
                 break;
             case MainStatType.Decl:
                 Compiler.EmitCode(".locals init (");
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 Compiler.EmitCode(")");
                 break;
             case MainStatType.DeclStat:
                 Compiler.EmitCode(".locals init (");
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 Compiler.EmitCode(")");
-                children[1].EmitCode();
+                _children[1].EmitCode();
                 break;
         }
     }
@@ -1158,13 +1090,13 @@ public class DeclList : SyntaxTree
     public DeclList(int lineNum, SyntaxTree childDecl) : base(lineNum)
     {
         _type = DeclListType.Decl;
-        children.Add(childDecl);
+        _children.Add(childDecl);
     }
     public DeclList(int lineNum, SyntaxTree childDeclList, SyntaxTree childDecl) : base(lineNum)
     {
         _type = DeclListType.DeclList;
-        children.Add(childDeclList);
-        children.Add(childDecl);
+        _children.Add(childDeclList);
+        _children.Add(childDecl);
     }
     public override void EmitCode()
     {
@@ -1174,9 +1106,9 @@ public class DeclList : SyntaxTree
                 base.EmitCode();
                 break;
             case DeclListType.DeclList:
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 Compiler.EmitCode(",");
-                children[1].EmitCode();
+                _children[1].EmitCode();
                 break;
         }
     }
@@ -1184,21 +1116,18 @@ public class DeclList : SyntaxTree
 public class StatList : SyntaxTree
 {
     public StatListType _type;
-    public StatList(int lineNum, SyntaxTree childrentat) : base(lineNum)
+    public StatList(int lineNum, SyntaxTree _childrentat) : base(lineNum)
     {
         _type = StatListType.Stat;
-        children.Add(childrentat);
+        _children.Add(_childrentat);
     }
-    public StatList(int lineNum, SyntaxTree childrentatList, SyntaxTree childrentat) : base(lineNum)
+    public StatList(int lineNum, SyntaxTree _childrentatList, SyntaxTree _childrentat) : base(lineNum)
     {
         _type = StatListType.StatList;
-        children.Add(childrentatList);
-        children.Add(childrentat);
+        _children.Add(_childrentatList);
+        _children.Add(_childrentat);
     }
-    public override void EmitCode()
-    {
-        base.EmitCode();
-    }
+    public override void EmitCode() { base.EmitCode(); }
 }
 public class SelectionStat : SyntaxTree
 {
@@ -1207,36 +1136,36 @@ public class SelectionStat : SyntaxTree
     public SelectionStat(int lineNum, SyntaxTree childExp, SyntaxTree childStat) : base(lineNum)
     {
         _type = SelectionStatType.If;
-        children.Add(childExp);
-        children.Add(childStat);
+        _children.Add(childExp);
+        _children.Add(childStat);
     }
     public SelectionStat(int lineNum, SyntaxTree childExp, SyntaxTree childStat1, SyntaxTree childStat2) : base(lineNum)
     {
         _type = SelectionStatType.IfElse;
-        children.Add(childExp);
-        children.Add(childStat1);
-        children.Add(childStat2);
+        _children.Add(childExp);
+        _children.Add(childStat1);
+        _children.Add(childStat2);
     }
     public override void EmitCode()
     {
         switch (_type)
         {
             case SelectionStatType.If:
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 _label1 = Compiler.GenLabel();
                 Compiler.EmitCode($"brfalse {_label1}");
-                children[1].EmitCode();
+                _children[1].EmitCode();
                 Compiler.EmitCode($"{_label1}:");
                 break;
             case SelectionStatType.IfElse:
-                children[0].EmitCode();
+                _children[0].EmitCode();
                 _label1 = Compiler.GenLabel();
                 Compiler.EmitCode($"brfalse {_label1}");
-                children[1].EmitCode();
+                _children[1].EmitCode();
                 _label2 = Compiler.GenLabel();
                 Compiler.EmitCode($"br {_label2}");
                 Compiler.EmitCode($"{_label1}:");
-                children[2].EmitCode();
+                _children[2].EmitCode();
                 Compiler.EmitCode($"{_label2}:");
                 break;
         }
@@ -1247,8 +1176,8 @@ public class SelectionStat : SyntaxTree
         base.SemanticAnalysis();
         if (PassSemError())
             return VariableType.SemError;
-        if (semChildren[0] != VariableType.Bool)
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: if term must be of type bool"));
+        if (_semChildren[0] != VariableType.Bool)
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: if term must be of type bool"));
         return VariableType.SemError;
     }
 }
@@ -1264,29 +1193,29 @@ public class WriteStat : SyntaxTree
     public WriteStat(int lineNum, WriteStatType type, SyntaxTree childExp) : base(lineNum)
     {
         _type = type;
-        children.Add(childExp);
+        _children.Add(childExp);
     }
     public override void EmitCode()
     {
         switch (_type)
         {
             case WriteStatType.Exp:
-                switch (semChildren[0])
+                switch (_semChildren[0])
                 {
                     case VariableType.Int:
-                        children[0].EmitCode();
+                        _children[0].EmitCode();
                         Compiler.EmitCode("call void [mscorlib]System.Console::Write(int32)");
                         break;
                     case VariableType.Double:
                         Compiler.EmitCode("call class [mscorlib]System.Globalization.CultureInfo [mscorlib]System.Globalization.CultureInfo::get_InvariantCulture()");
                         Compiler.EmitCode("ldstr \"{0:0.000000}\"");
-                        children[0].EmitCode();
+                        _children[0].EmitCode();
                         Compiler.EmitCode("box [mscorlib]System.Double");
                         Compiler.EmitCode("call string [mscorlib]System.String::Format(class [mscorlib]System.IFormatProvider, string, object)");
                         Compiler.EmitCode("call void [mscorlib]System.Console::Write(string)");
                         break;
                     case VariableType.Bool:
-                        children[0].EmitCode();
+                        _children[0].EmitCode();
                         Compiler.EmitCode("call void [mscorlib]System.Console::Write(bool)");
                         break;
                 }
@@ -1301,13 +1230,12 @@ public class WriteStat : SyntaxTree
     public override VariableType SemanticAnalysis()
     {
         base.SemanticAnalysis();
-        if (_type == WriteStatType.Exp && semChildren[0] != VariableType.Bool && semChildren[0] != VariableType.Int && semChildren[0] != VariableType.Double)
+        if (_type == WriteStatType.Exp && _semChildren[0] != VariableType.Bool && _semChildren[0] != VariableType.Int && _semChildren[0] != VariableType.Double)
         {
-            Compiler.SemanticErrors.Add(new SemanticError(_line, "Error: this is not a valid expression"));
+            Compiler.semanticErrors.Add(new SemanticError(_line, "Error: this is not a valid expression"));
             return VariableType.SemError;
         }
         return VariableType.NoVariable;
     }
 }
-
 #endregion
